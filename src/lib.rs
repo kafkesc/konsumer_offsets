@@ -68,27 +68,15 @@ mod group_metadata;
 mod offset_commit;
 mod utils;
 
-use errors::KonsumerOffsetsError;
-use group_metadata::GroupMetadata;
-use offset_commit::OffsetCommit;
-
 use bytes_parser::BytesParser;
 
-/*
-Source: https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html
-- java data is in Big Endian
-- java short == i16
-- java int == i32
-- java long == i64
-- java float == f32
-- java double == f64
-- java boolean == u8
-- java char == u16, so for Rust it will need to be cast to u32
- */
+pub use errors::KonsumerOffsetsError;
+pub use group_metadata::*;
+pub use offset_commit::*;
 
 pub(crate) const MSG_V0_OFFSET_COMMIT: i16 = 0;
 pub(crate) const MSG_V1_OFFSET_COMMIT: i16 = 1;
-pub(crate) const MSG_V2_OFFSET_COMMIT: i16 = 2;
+pub(crate) const MSG_V2_GROUP_METADATA: i16 = 2;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KonsumerOffsetsData {
@@ -96,58 +84,93 @@ pub enum KonsumerOffsetsData {
     GroupMetadata(GroupMetadata),
 }
 
-pub fn parse(
-    key: Option<&[u8]>,
-    payload: Option<&[u8]>,
-) -> Result<KonsumerOffsetsData, KonsumerOffsetsError> {
-    // Throw error if a key is not provided: without we can't do much.
-    if key.is_none() {
-        return Err(KonsumerOffsetsError::CannotDetermineMessageVersionWithoutKey);
-    }
+impl KonsumerOffsetsData {
+    /// Parses the content of a messages (a.k.a. records) from the `__consumer_offsets`.
+    ///
+    /// `__consumer_offsets` it's a key internal Kafka topic, used by Kafka Consumers to
+    /// keep track of the offset consumed so far, and also to coordinate their subscriptions
+    /// and partition assignments.
+    ///
+    /// This method returns a [`KonsumerOffsetsData`]: an enum where each variant represents
+    /// one of the possible messages that this topic carries.
+    /// Refer to the documentation of each variant for details.
+    ///
+    /// **NOTE:** As Kafka messages have key and payload both optional,
+    /// the signature reflects that. But messages of `__consumer_offsets`
+    /// have at least a key set: if absent, the method will return an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - An [`Option`] of `&[u8]`: when set, it means the source Kafka message has a key.
+    ///     If `key` is `None`, this function will return an error: it's likely that the message
+    ///     it's not actually from the `__consumer_offsets` topic.
+    /// * `payload` - An [`Option`] of `&[u8]`: when set, it means the source Kafka message has
+    ///     a payload. If `payload` is `None`, the source Kafka message is a tombstone.
+    pub fn try_from_message(
+        key: Option<&[u8]>,
+        payload: Option<&[u8]>,
+    ) -> Result<KonsumerOffsetsData, KonsumerOffsetsError> {
+        match key {
+            // Throw error if a key is not provided: without we can't do much.
+            None => Err(KonsumerOffsetsError::MessageKeyMissing),
+            Some(key_bytes) => {
+                let mut key_parser = BytesParser::from(key_bytes);
+                match key_parser.parse_i16() {
+                    Ok(message_version) => match message_version {
+                        // Is it an `OffsetCommit`?
+                        MSG_V0_OFFSET_COMMIT..=MSG_V1_OFFSET_COMMIT => {
+                            let mut offset_commit = OffsetCommit::new(message_version);
 
-    // In no payload is provided, this is a tombstone record.
-    let is_tombstone = payload.is_none();
+                            offset_commit.parse_key_fields(&mut key_parser)?;
 
-    let mut key_parser = BytesParser::from(key.unwrap());
+                            // If there is a payload, parse the remaining fields,
+                            // otherwise the message was a tombstone.
+                            match payload {
+                                None => {
+                                    // If no payload is provided, this is a tombstone record.
+                                    offset_commit.is_tombstone = true;
+                                }
+                                Some(payload_bytes) => {
+                                    let mut payload_parser = BytesParser::from(payload_bytes);
+                                    offset_commit.parse_value_fields(&mut payload_parser)?;
+                                }
+                            }
 
-    match key_parser.parse_i16() {
-        Ok(message_version) => match message_version {
-            MSG_V0_OFFSET_COMMIT..=MSG_V1_OFFSET_COMMIT => {
-                let mut offset_commit = OffsetCommit::new(message_version);
+                            Ok(KonsumerOffsetsData::OffsetCommit(offset_commit))
+                        }
+                        // Is it a `GroupMetadata`?
+                        MSG_V2_GROUP_METADATA => {
+                            let mut group_metadata = GroupMetadata::new(message_version);
 
-                offset_commit.parse_key_fields(&mut key_parser)?;
+                            group_metadata.parse_key_fields(&mut key_parser)?;
 
-                if !is_tombstone {
-                    let mut payload_parser = BytesParser::from(payload.unwrap());
-                    offset_commit.parse_value_fields(&mut payload_parser)?;
-                } else {
-                    offset_commit.is_tombstone = true;
+                            // If there is a payload, parse the remaining fields,
+                            // otherwise the message was a tombstone.
+                            match payload {
+                                None => {
+                                    // If no payload is provided, this is a tombstone record.
+                                    group_metadata.is_tombstone = true;
+                                }
+                                Some(payload_bytes) => {
+                                    let mut payload_parser = BytesParser::from(payload_bytes);
+                                    group_metadata.parse_value_fields(&mut payload_parser)?;
+                                }
+                            }
+
+                            Ok(KonsumerOffsetsData::GroupMetadata(group_metadata))
+                        }
+                        _ => Err(KonsumerOffsetsError::UnsupportedMessageVersion(
+                            message_version,
+                        )),
+                    },
+                    Err(e) => Err(KonsumerOffsetsError::ByteParsingError(e)),
                 }
-
-                Ok(KonsumerOffsetsData::OffsetCommit(offset_commit))
             }
-            MSG_V2_OFFSET_COMMIT => {
-                let mut group_metadata = GroupMetadata::new(message_version);
-
-                group_metadata.parse_key_fields(&mut key_parser)?;
-
-                if !is_tombstone {
-                    let mut payload_parser = BytesParser::from(payload.unwrap());
-                    group_metadata.parse_value_fields(&mut payload_parser)?;
-                } else {
-                    group_metadata.is_tombstone = true;
-                }
-
-                Ok(KonsumerOffsetsData::GroupMetadata(group_metadata))
-            }
-            _ => Err(KonsumerOffsetsError::UnsupportedMessageVersion(
-                message_version,
-            )),
-        },
-        Err(e) => Err(KonsumerOffsetsError::ByteParsingError(e)),
+        }
     }
 }
 
+// TODO tests
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,7 +191,8 @@ mod tests {
         let pp = Path::new("fixtures/tests/02-group_metadata_payload");
         let payload_bytes = fs::read(pp).unwrap();
 
-        let x = parse(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
+        let x =
+            KonsumerOffsetsData::try_from_message(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
         println!("{:#?}", x);
     }
 }
