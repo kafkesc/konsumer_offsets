@@ -2,16 +2,9 @@ use bytes_parser::BytesParser;
 
 use crate::errors::KonsumerOffsetsError;
 
-/// A `__consumer_offsets` specific parser for [`String`].
+/// A [`String`] parser, tailor-made for `__consumer_offsets` messages.
 ///
-/// This expects strings coming from the `__consumer_offsets` Kafka internal topic,
-/// to be encoded as: an `i16` representing "amount of bytes", followed by
-/// an `&str` of that length.
-///
-/// The length is encoded in `i16`: Kafka uses a Java Short, that is
-/// a signed 16-bit integer, encoded in Big-Endian. See Java
-/// [Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
-/// for details.
+/// See the crate documentation for details about the format.
 ///
 /// Returns a [`String::default`] if the parsed `i16` contains a negative value.
 ///
@@ -33,14 +26,7 @@ pub(crate) fn parse_str(parser: &mut BytesParser) -> Result<String, KonsumerOffs
 
 /// A `__consumer_offsets` specific parser for [`Vec<u8>`].
 ///
-/// This expects a vector of bytes coming from the `__consumer_offsets` Kafka internal topic,
-/// to be encoded as: an `i32` representing "amount of bytes", followed by
-/// a `[u8]` of that length.
-///
-/// The length is encoded in `i32`: Kafka uses a Java Integer, that is
-/// a signed 32-bit integer, encoded in Big-Endian. See Java
-/// [Primitive Data Types](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)
-/// for details.
+/// See the crate documentation for details about the format.
 ///
 /// # Arguments
 ///
