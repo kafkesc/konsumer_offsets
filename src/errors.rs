@@ -1,10 +1,11 @@
 use bytes_parser::BytesParserError;
 use thiserror::Error;
 
+/// TODO doc
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum KonsumerOffsetsError {
     #[error("Cannot parse message without its key: unable to determine version")]
-    CannotDetermineMessageVersionWithoutKey,
+    MessageKeyMissing,
 
     #[error("Failure while parsing bytes: {0}")]
     ByteParsingError(#[source] BytesParserError),

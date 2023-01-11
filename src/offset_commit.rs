@@ -3,6 +3,7 @@ use bytes_parser::BytesParser;
 use crate::errors::KonsumerOffsetsError;
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 
+/// TODO doc
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct OffsetCommit {
     pub message_version: i16,

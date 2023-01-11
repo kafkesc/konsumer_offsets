@@ -4,6 +4,7 @@ use std::any::type_name;
 use crate::errors::KonsumerOffsetsError;
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str, parse_vec_bytes};
 
+/// TODO doc
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct GroupMetadata {
     pub message_version: i16,
@@ -79,6 +80,7 @@ impl GroupMetadata {
     }
 }
 
+/// TODO doc
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct MemberMetadata {
     pub member_id: String,
@@ -134,6 +136,7 @@ impl MemberMetadata {
     }
 }
 
+/// TODO doc
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct ConsumerProtocolSubscription {
     version: i16,
@@ -240,6 +243,7 @@ impl TopicPartitions {
     }
 }
 
+/// TODO doc
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct ConsumerProtocolAssignment {
     version: i16,
