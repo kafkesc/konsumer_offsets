@@ -191,8 +191,10 @@ mod tests {
         let pp = Path::new("fixtures/tests/02-group_metadata_payload");
         let payload_bytes = fs::read(pp).unwrap();
 
-        let x =
-            KonsumerOffsetsData::try_from_message(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
+        let x = KonsumerOffsetsData::try_from_message(
+            Some(key_bytes.as_slice()),
+            Some(payload_bytes.as_slice()),
+        );
         println!("{:#?}", x);
     }
 }
