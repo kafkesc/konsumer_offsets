@@ -119,42 +119,26 @@ impl KonsumerOffsetsData {
                     Ok(message_version) => match message_version {
                         // Is it an `OffsetCommit`?
                         MSG_V0_OFFSET_COMMIT..=MSG_V1_OFFSET_COMMIT => {
-                            let mut offset_commit = OffsetCommit::new(message_version);
+                            let mut offset_commit =
+                                OffsetCommit::try_from(&mut key_parser, message_version)?;
 
-                            offset_commit.parse_key_fields(&mut key_parser)?;
-
-                            // If there is a payload, parse the remaining fields,
-                            // otherwise the message was a tombstone.
-                            match payload {
-                                None => {
-                                    // If no payload is provided, this is a tombstone record.
-                                    offset_commit.is_tombstone = true;
-                                }
-                                Some(payload_bytes) => {
-                                    let mut payload_parser = BytesParser::from(payload_bytes);
-                                    offset_commit.parse_value_fields(&mut payload_parser)?;
-                                }
+                            // If there is a payload, parse it; otherwise, it's a tombstone.
+                            if let Some(payload_bytes) = payload {
+                                let mut payload_parser = BytesParser::from(payload_bytes);
+                                offset_commit.parse_payload(&mut payload_parser)?;
                             }
 
                             Ok(KonsumerOffsetsData::OffsetCommit(offset_commit))
                         }
                         // Is it a `GroupMetadata`?
                         MSG_V2_GROUP_METADATA => {
-                            let mut group_metadata = GroupMetadata::new(message_version);
+                            let mut group_metadata =
+                                GroupMetadata::try_from(&mut key_parser, message_version)?;
 
-                            group_metadata.parse_key_fields(&mut key_parser)?;
-
-                            // If there is a payload, parse the remaining fields,
-                            // otherwise the message was a tombstone.
-                            match payload {
-                                None => {
-                                    // If no payload is provided, this is a tombstone record.
-                                    group_metadata.is_tombstone = true;
-                                }
-                                Some(payload_bytes) => {
-                                    let mut payload_parser = BytesParser::from(payload_bytes);
-                                    group_metadata.parse_value_fields(&mut payload_parser)?;
-                                }
+                            // If there is a payload, parse it; otherwise, it's a tombstone.
+                            if let Some(payload_bytes) = payload {
+                                let mut payload_parser = BytesParser::from(payload_bytes);
+                                group_metadata.parse_payload(&mut payload_parser)?;
                             }
 
                             Ok(KonsumerOffsetsData::GroupMetadata(group_metadata))

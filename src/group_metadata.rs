@@ -22,32 +22,30 @@ pub struct GroupMetadata {
 }
 
 impl GroupMetadata {
-    pub(crate) fn new(message_version: i16) -> GroupMetadata {
-        GroupMetadata {
-            message_version,
-            ..Default::default()
-        }
-    }
-
     /// TODO doc
     ///
     /// NOTE: This is based on `kafka.internals.generated.GroupMetadataKey#read` method.
-    pub(crate) fn parse_key_fields(
-        &mut self,
+    pub(crate) fn try_from(
         parser: &mut BytesParser,
-    ) -> Result<(), KonsumerOffsetsError> {
-        self.group = parse_str(parser)?;
-
-        Ok(())
+        message_version: i16,
+    ) -> Result<Self, KonsumerOffsetsError> {
+        Ok(GroupMetadata {
+            message_version,
+            group: parse_str(parser)?,
+            is_tombstone: true,
+            ..Default::default()
+        })
     }
 
     /// TODO doc
     ///
     /// NOTE: This is based on `kafka.internals.generated.GroupMetadataValue#read` method.
-    pub(crate) fn parse_value_fields(
+    pub(crate) fn parse_payload(
         &mut self,
         parser: &mut BytesParser,
     ) -> Result<(), KonsumerOffsetsError> {
+        self.is_tombstone = false;
+
         self.schema_version = parse_i16(parser)?;
         if !(0..=3).contains(&self.schema_version) {
             return Err(KonsumerOffsetsError::UnsupportedGroupMetadataSchema(
