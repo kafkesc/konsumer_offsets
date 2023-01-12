@@ -13,3 +13,6 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 bytes_parser = "0.1.2"
 thiserror = "1.0.38"
+
+[dev-dependencies]
+rstest = "0.16.0"

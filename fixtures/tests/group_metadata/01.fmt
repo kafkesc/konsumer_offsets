@@ -1,0 +1,45 @@
+GroupMetadata {
+    message_version: 2,
+    group: "kafkesc-devcluster-group-id",
+    is_tombstone: false,
+    schema_version: 3,
+    protocol_type: "consumer",
+    generation: 7,
+    protocol: "range",
+    leader: "rdkafka-9f4fc1b0-1d7d-4471-90e8-e0f64f3c9d9f",
+    current_state_timestamp: 1672870956437,
+    members: [
+        MemberMetadata {
+            id: "rdkafka-9f4fc1b0-1d7d-4471-90e8-e0f64f3c9d9f",
+            group_instance_id: "",
+            client_id: "rdkafka",
+            client_host: "/172.18.0.1",
+            rebalance_timeout: 300000,
+            session_timeout: 45000,
+            subscription: ConsumerProtocolSubscription {
+                version: 1,
+                subscribed_topics: [
+                    "t01",
+                ],
+                user_data: [],
+                owned_topic_partitions: [],
+                generation_id: -1,
+                rack_id: "",
+            },
+            assignment: ConsumerProtocolAssignment {
+                version: 0,
+                assigned_topic_partitions: [
+                    TopicPartitions {
+                        topic: "t01",
+                        partitions: [
+                            0,
+                            1,
+                            2,
+                        ],
+                    },
+                ],
+                user_data: [],
+            },
+        },
+    ],
+}

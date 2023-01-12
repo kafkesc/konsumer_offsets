@@ -1,0 +1,13 @@
+OffsetCommit {
+    message_version: 1,
+    group: "kafkesc-devcluster-group-id",
+    topic: "t01",
+    partition: 0,
+    is_tombstone: false,
+    schema_version: 3,
+    offset: 106,
+    leader_epoch: -1,
+    metadata: "",
+    commit_timestamp: 1672788047244,
+    expire_timestamp: -1,
+}

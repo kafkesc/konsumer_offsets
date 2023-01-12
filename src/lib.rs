@@ -170,31 +170,84 @@ impl KonsumerOffsetsData {
     }
 }
 
-// TODO tests
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
     use std::path::Path;
 
-    #[test]
-    fn it_works() {
-        // let kp = Path::new("fixtures/tests/01-offset_commit_key");
-        // let key_bytes = fs::read(kp).unwrap();
-        // let pp = Path::new("fixtures/tests/01-offset_commit_payload");
-        // let payload_bytes = fs::read(pp).unwrap();
-        //
-        // let _ = parse(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
+    use rstest::rstest;
 
-        let kp = Path::new("fixtures/tests/02-group_metadata_key");
-        let key_bytes = fs::read(kp).unwrap();
-        let pp = Path::new("fixtures/tests/02-group_metadata_payload");
-        let payload_bytes = fs::read(pp).unwrap();
+    use super::*;
 
-        let x = KonsumerOffsetsData::try_from_message(
+    #[rstest]
+    #[case(01)]
+    #[case(02)]
+    #[case(03)]
+    #[case(04)]
+    #[case(05)]
+    fn from_offset_commit(#[case] fixture_id: u16) {
+        let (key_bytes, payload_bytes, fmt_string) = read_offset_commit_fixture(fixture_id);
+
+        let konsumer_offsets_data = KonsumerOffsetsData::try_from_message(
             Some(key_bytes.as_slice()),
             Some(payload_bytes.as_slice()),
         );
-        println!("{:#?}", x);
+        assert!(konsumer_offsets_data.is_ok());
+        match konsumer_offsets_data.unwrap() {
+            KonsumerOffsetsData::OffsetCommit(oc) => {
+                // println!("{:#?}", oc);
+                assert_eq!(format!("{:#?}", oc), fmt_string);
+            }
+            _ => panic!("Returned wrong enum value!"),
+        }
+    }
+
+    #[rstest]
+    #[case(01)]
+    #[case(02)]
+    #[case(03)]
+    #[case(04)]
+    #[case(05)]
+    fn from_group_metadata(#[case] fixture_id: u16) {
+        let (key_bytes, payload_bytes, fmt_string) = read_group_metadata_fixture(fixture_id);
+
+        let konsumer_offsets_data = KonsumerOffsetsData::try_from_message(
+            Some(key_bytes.as_slice()),
+            Some(payload_bytes.as_slice()),
+        );
+        assert!(konsumer_offsets_data.is_ok());
+        match konsumer_offsets_data.unwrap() {
+            KonsumerOffsetsData::GroupMetadata(gm) => {
+                // println!("{:#?}", gm);
+                assert_eq!(format!("{:#?}", gm), fmt_string);
+            }
+            _ => panic!("Returned wrong enum value!"),
+        }
+    }
+
+    fn read_offset_commit_fixture(fixture_id: u16) -> (Vec<u8>, Vec<u8>, String) {
+        read_fixture("offset_commit", fixture_id)
+    }
+
+    fn read_group_metadata_fixture(fixture_id: u16) -> (Vec<u8>, Vec<u8>, String) {
+        read_fixture("group_metadata", fixture_id)
+    }
+
+    fn read_fixture(fixture_name: &str, fixture_id: u16) -> (Vec<u8>, Vec<u8>, String) {
+        let k = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.key");
+        let key_path = Path::new(k.as_str());
+        let p = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.payload");
+        let payload_path = Path::new(p.as_str());
+        let f = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.fmt");
+        let fmt_path = Path::new(f.as_str());
+        assert!(key_path.exists());
+        assert!(payload_path.exists());
+        assert!(fmt_path.exists());
+
+        (
+            fs::read(key_path).unwrap(),
+            fs::read(payload_path).unwrap(),
+            fs::read_to_string(fmt_path).unwrap(),
+        )
     }
 }
