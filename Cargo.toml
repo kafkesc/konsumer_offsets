@@ -7,8 +7,12 @@ repository = "TODO"
 homepage = "TODO"
 description = "TODO"
 license = "MIT OR Apache-2.0"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+keywords = ["apache", "kafka", "parser", "__consumer_offsets"]
+categories = ["encoding", "network-programming", "parsing"]
+exclude = [
+    ".gitignore",
+    ".github/",
+]
 
 [dependencies]
 bytes_parser = "0.1.2"
