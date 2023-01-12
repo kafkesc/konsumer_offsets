@@ -83,7 +83,7 @@ impl GroupMetadata {
 /// TODO doc
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct MemberMetadata {
-    pub member_id: String,
+    pub id: String,
     pub group_instance_id: String,
     pub client_id: String,
     pub client_host: String,
@@ -100,7 +100,7 @@ impl MemberMetadata {
         schema_version: i16,
     ) -> Result<Self, KonsumerOffsetsError> {
         let mut member = Self {
-            member_id: parse_str(parser)?,
+            id: parse_str(parser)?,
             ..Default::default()
         };
 
