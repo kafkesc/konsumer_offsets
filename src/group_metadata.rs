@@ -25,10 +25,7 @@ impl GroupMetadata {
     /// TODO doc
     ///
     /// NOTE: This is based on `kafka.internals.generated.GroupMetadataKey#read` method.
-    pub(crate) fn try_from(
-        parser: &mut BytesParser,
-        message_version: i16,
-    ) -> Result<Self, KonsumerOffsetsError> {
+    pub(crate) fn try_from(parser: &mut BytesParser, message_version: i16) -> Result<Self, KonsumerOffsetsError> {
         Ok(GroupMetadata {
             message_version,
             group: parse_str(parser)?,
@@ -40,17 +37,12 @@ impl GroupMetadata {
     /// TODO doc
     ///
     /// NOTE: This is based on `kafka.internals.generated.GroupMetadataValue#read` method.
-    pub(crate) fn parse_payload(
-        &mut self,
-        parser: &mut BytesParser,
-    ) -> Result<(), KonsumerOffsetsError> {
+    pub(crate) fn parse_payload(&mut self, parser: &mut BytesParser) -> Result<(), KonsumerOffsetsError> {
         self.is_tombstone = false;
 
         self.schema_version = parse_i16(parser)?;
         if !(0..=3).contains(&self.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedGroupMetadataSchema(
-                self.schema_version,
-            ));
+            return Err(KonsumerOffsetsError::UnsupportedGroupMetadataSchema(self.schema_version));
         }
 
         self.protocol_type = parse_str(parser)?;
@@ -70,8 +62,7 @@ impl GroupMetadata {
         let members_len = parse_i32(parser)?;
         self.members = Vec::with_capacity(members_len as usize);
         for _ in 0..members_len {
-            self.members
-                .push(MemberMetadata::try_from(parser, self.schema_version)?);
+            self.members.push(MemberMetadata::try_from(parser, self.schema_version)?);
         }
 
         Ok(())
@@ -93,10 +84,7 @@ pub struct MemberMetadata {
 
 impl MemberMetadata {
     /// NOTE `kafka.internals.generated.GroupMetadataValue.MemberMetadata#read` method.
-    fn try_from(
-        parser: &mut BytesParser,
-        schema_version: i16,
-    ) -> Result<Self, KonsumerOffsetsError> {
+    fn try_from(parser: &mut BytesParser, schema_version: i16) -> Result<Self, KonsumerOffsetsError> {
         let mut member = Self {
             id: parse_str(parser)?,
             ..Default::default()
@@ -119,15 +107,13 @@ impl MemberMetadata {
         member.session_timeout = parse_i32(parser)?;
 
         let subscription_bytes_len = parse_i32(parser)?;
-        let mut subscription_parser = parser
-            .from_slice(subscription_bytes_len as usize)
-            .map_err(KonsumerOffsetsError::ByteParsingError)?;
+        let mut subscription_parser =
+            parser.from_slice(subscription_bytes_len as usize).map_err(KonsumerOffsetsError::ByteParsingError)?;
         member.subscription = ConsumerProtocolSubscription::try_from(&mut subscription_parser)?;
 
         let assignment_bytes_len = parse_i32(parser)?;
-        let mut assignment_parser = parser
-            .from_slice(assignment_bytes_len as usize)
-            .map_err(KonsumerOffsetsError::ByteParsingError)?;
+        let mut assignment_parser =
+            parser.from_slice(assignment_bytes_len as usize).map_err(KonsumerOffsetsError::ByteParsingError)?;
         member.assignment = ConsumerProtocolAssignment::try_from(&mut assignment_parser)?;
 
         Ok(member)
@@ -158,11 +144,7 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
         };
 
         if !(0..=3).contains(&subscription.version) {
-            return Err(
-                KonsumerOffsetsError::UnsupportedConsumerProtocolSubscriptionVersion(
-                    subscription.version,
-                ),
-            );
+            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolSubscriptionVersion(subscription.version));
         }
 
         let subscribed_topics_len = parse_i32(parser)?;
@@ -178,12 +160,9 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
         if subscription.version >= 1 {
             let owned_topic_partitions_len = parse_i32(parser)?;
             if owned_topic_partitions_len > 0 {
-                subscription.owned_topic_partitions =
-                    Vec::with_capacity(owned_topic_partitions_len as usize);
+                subscription.owned_topic_partitions = Vec::with_capacity(owned_topic_partitions_len as usize);
                 for _ in 0..owned_topic_partitions_len {
-                    subscription
-                        .owned_topic_partitions
-                        .push(TopicPartitions::try_from(parser, subscription.version)?);
+                    subscription.owned_topic_partitions.push(TopicPartitions::try_from(parser, subscription.version)?);
                 }
             }
         }
@@ -262,21 +241,14 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
         };
 
         if !(0..=3).contains(&assignment.version) {
-            return Err(
-                KonsumerOffsetsError::UnsupportedConsumerProtocolAssignmentVersion(
-                    assignment.version,
-                ),
-            );
+            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolAssignmentVersion(assignment.version));
         }
 
         let assigned_topic_partitions_len = parse_i32(parser)?;
         if assigned_topic_partitions_len > 0 {
-            assignment.assigned_topic_partitions =
-                Vec::with_capacity(assigned_topic_partitions_len as usize);
+            assignment.assigned_topic_partitions = Vec::with_capacity(assigned_topic_partitions_len as usize);
             for _ in 0..assigned_topic_partitions_len {
-                assignment
-                    .assigned_topic_partitions
-                    .push(TopicPartitions::try_from(parser, assignment.version)?);
+                assignment.assigned_topic_partitions.push(TopicPartitions::try_from(parser, assignment.version)?);
             }
         }
 

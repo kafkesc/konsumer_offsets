@@ -18,10 +18,7 @@ pub(crate) fn parse_str(parser: &mut BytesParser) -> Result<String, KonsumerOffs
         return Ok(String::default());
     }
 
-    parser
-        .parse_str_utf8(group_strlen as usize)
-        .map(|s| s.into())
-        .map_err(KonsumerOffsetsError::ByteParsingError)
+    parser.parse_str_utf8(group_strlen as usize).map(|s| s.into()).map_err(KonsumerOffsetsError::ByteParsingError)
 }
 
 /// A `__consumer_offsets` specific parser for [`Vec<u8>`].
@@ -35,9 +32,7 @@ pub(crate) fn parse_str(parser: &mut BytesParser) -> Result<String, KonsumerOffs
 pub(crate) fn parse_vec_bytes(parser: &mut BytesParser) -> Result<Vec<u8>, KonsumerOffsetsError> {
     let bytes_array_len = parse_i32(parser)?;
 
-    let slice = parser
-        .parse_slice(bytes_array_len as usize)
-        .map_err(KonsumerOffsetsError::ByteParsingError)?;
+    let slice = parser.parse_slice(bytes_array_len as usize).map_err(KonsumerOffsetsError::ByteParsingError)?;
 
     Ok(slice.to_vec())
 }
@@ -49,9 +44,7 @@ pub(crate) fn parse_vec_bytes(parser: &mut BytesParser) -> Result<Vec<u8>, Konsu
 /// * `parser` - A [`BytesParser`] with its internal cursor pointing
 ///     at the beginning of the [`i16`] we want to parse.
 pub(crate) fn parse_i16(parser: &mut BytesParser) -> Result<i16, KonsumerOffsetsError> {
-    parser
-        .parse_i16()
-        .map_err(KonsumerOffsetsError::ByteParsingError)
+    parser.parse_i16().map_err(KonsumerOffsetsError::ByteParsingError)
 }
 
 /// Adapter for [`BytesParser::parse_i32`].
@@ -61,9 +54,7 @@ pub(crate) fn parse_i16(parser: &mut BytesParser) -> Result<i16, KonsumerOffsets
 /// * `parser` - A [`BytesParser`] with its internal cursor pointing
 ///     at the beginning of the [`i32`] we want to parse.
 pub(crate) fn parse_i32(parser: &mut BytesParser) -> Result<i32, KonsumerOffsetsError> {
-    parser
-        .parse_i32()
-        .map_err(KonsumerOffsetsError::ByteParsingError)
+    parser.parse_i32().map_err(KonsumerOffsetsError::ByteParsingError)
 }
 
 /// Adapter for [`BytesParser::parse_i64`].
@@ -73,7 +64,5 @@ pub(crate) fn parse_i32(parser: &mut BytesParser) -> Result<i32, KonsumerOffsets
 /// * `parser` - A [`BytesParser`] with its internal cursor pointing
 ///     at the beginning of the [`i64`] we want to parse.
 pub(crate) fn parse_i64(parser: &mut BytesParser) -> Result<i64, KonsumerOffsetsError> {
-    parser
-        .parse_i64()
-        .map_err(KonsumerOffsetsError::ByteParsingError)
+    parser.parse_i64().map_err(KonsumerOffsetsError::ByteParsingError)
 }

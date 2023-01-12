@@ -25,10 +25,7 @@ impl OffsetCommit {
     /// TODO doc
     ///
     /// NOTE: This is based on `kafka.internals.generated.OffsetCommitKey#read` method..
-    pub(crate) fn try_from(
-        parser: &mut BytesParser,
-        message_version: i16,
-    ) -> Result<Self, KonsumerOffsetsError> {
+    pub(crate) fn try_from(parser: &mut BytesParser, message_version: i16) -> Result<Self, KonsumerOffsetsError> {
         Ok(OffsetCommit {
             message_version,
             group: parse_str(parser)?,
@@ -42,17 +39,12 @@ impl OffsetCommit {
     /// TODO doc
     ///
     /// NOTE: This is based on `kafka.internals.generated.OffsetCommitValue#read` method.
-    pub(crate) fn parse_payload(
-        &mut self,
-        parser: &mut BytesParser,
-    ) -> Result<(), KonsumerOffsetsError> {
+    pub(crate) fn parse_payload(&mut self, parser: &mut BytesParser) -> Result<(), KonsumerOffsetsError> {
         self.is_tombstone = false;
 
         self.schema_version = parse_i16(parser)?;
         if !(0..=3).contains(&self.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedOffsetCommitSchema(
-                self.schema_version,
-            ));
+            return Err(KonsumerOffsetsError::UnsupportedOffsetCommitSchema(self.schema_version));
         }
 
         self.offset = parse_i64(parser)?;

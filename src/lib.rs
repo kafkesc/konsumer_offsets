@@ -119,8 +119,7 @@ impl KonsumerOffsetsData {
                     Ok(message_version) => match message_version {
                         // Is it an `OffsetCommit`?
                         MSG_V0_OFFSET_COMMIT..=MSG_V1_OFFSET_COMMIT => {
-                            let mut offset_commit =
-                                OffsetCommit::try_from(&mut key_parser, message_version)?;
+                            let mut offset_commit = OffsetCommit::try_from(&mut key_parser, message_version)?;
 
                             // If there is a payload, parse it; otherwise, it's a tombstone.
                             if let Some(payload_bytes) = payload {
@@ -129,11 +128,10 @@ impl KonsumerOffsetsData {
                             }
 
                             Ok(KonsumerOffsetsData::OffsetCommit(offset_commit))
-                        }
+                        },
                         // Is it a `GroupMetadata`?
                         MSG_V2_GROUP_METADATA => {
-                            let mut group_metadata =
-                                GroupMetadata::try_from(&mut key_parser, message_version)?;
+                            let mut group_metadata = GroupMetadata::try_from(&mut key_parser, message_version)?;
 
                             // If there is a payload, parse it; otherwise, it's a tombstone.
                             if let Some(payload_bytes) = payload {
@@ -142,14 +140,12 @@ impl KonsumerOffsetsData {
                             }
 
                             Ok(KonsumerOffsetsData::GroupMetadata(group_metadata))
-                        }
-                        _ => Err(KonsumerOffsetsError::UnsupportedMessageVersion(
-                            message_version,
-                        )),
+                        },
+                        _ => Err(KonsumerOffsetsError::UnsupportedMessageVersion(message_version)),
                     },
                     Err(e) => Err(KonsumerOffsetsError::ByteParsingError(e)),
                 }
-            }
+            },
         }
     }
 }
@@ -172,16 +168,14 @@ mod tests {
     fn from_offset_commit(#[case] fixture_id: u16) {
         let (key_bytes, payload_bytes, fmt_string) = read_offset_commit_fixture(fixture_id);
 
-        let konsumer_offsets_data = KonsumerOffsetsData::try_from_message(
-            Some(key_bytes.as_slice()),
-            Some(payload_bytes.as_slice()),
-        );
+        let konsumer_offsets_data =
+            KonsumerOffsetsData::try_from_message(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
         assert!(konsumer_offsets_data.is_ok());
         match konsumer_offsets_data.unwrap() {
             KonsumerOffsetsData::OffsetCommit(oc) => {
                 // println!("{:#?}", oc);
                 assert_eq!(format!("{:#?}", oc), fmt_string);
-            }
+            },
             _ => panic!("Returned wrong enum value!"),
         }
     }
@@ -195,16 +189,14 @@ mod tests {
     fn from_group_metadata(#[case] fixture_id: u16) {
         let (key_bytes, payload_bytes, fmt_string) = read_group_metadata_fixture(fixture_id);
 
-        let konsumer_offsets_data = KonsumerOffsetsData::try_from_message(
-            Some(key_bytes.as_slice()),
-            Some(payload_bytes.as_slice()),
-        );
+        let konsumer_offsets_data =
+            KonsumerOffsetsData::try_from_message(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
         assert!(konsumer_offsets_data.is_ok());
         match konsumer_offsets_data.unwrap() {
             KonsumerOffsetsData::GroupMetadata(gm) => {
                 // println!("{:#?}", gm);
                 assert_eq!(format!("{:#?}", gm), fmt_string);
-            }
+            },
             _ => panic!("Returned wrong enum value!"),
         }
     }
@@ -228,10 +220,6 @@ mod tests {
         assert!(payload_path.exists());
         assert!(fmt_path.exists());
 
-        (
-            fs::read(key_path).unwrap(),
-            fs::read(payload_path).unwrap(),
-            fs::read_to_string(fmt_path).unwrap(),
-        )
+        (fs::read(key_path).unwrap(), fs::read(payload_path).unwrap(), fs::read_to_string(fmt_path).unwrap())
     }
 }
