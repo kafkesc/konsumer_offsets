@@ -3,6 +3,12 @@
 //! This was written by reverse-engineering the parsing logic used in [Kafka], looking at both
 //! [Group Coordinator] and [Consumer Client] source code.
 //!
+//! An **extra perk** of this crate, is that it serves also a didactic purpose: it attempts
+//! to documenting really clearly what each struct and field represents, what it means in
+//! the context of Kafka _"coordinated consumption of messages"_, and how it was parsed.
+//!
+//! # Before you dive in
+//!
 //! What this crate does, and what data it can parse, will make
 //! sense only if you have read about how Kafka tracks Consumer Offsets. Especially, what
 //! part the Consumer [Group Coordinator] play in that. A _great_ resource to learn (or refresh)
@@ -54,8 +60,8 @@
 //!
 //! ## [`OffsetCommit`] a.k.a. "where is the consumer at?"
 //!
-//! The Kafka uses code generation to materialise [`OffsetCommit`] into Java code, and this is
-//! actually composed of 2 json definitions, that at compile time get turned into Java Classes:
+//! Kafka uses code generation to materialise [`OffsetCommit`] into Java code,
+//! and this is composed of 2 json definitions, that at compile time get turned into Java Classes:
 //! [`OffsetCommitKey`] and [`OffsetCommitValue`].
 //!
 //! Assuming you are familiar with the [Consumer Group Protocol] (as discussed above): this
@@ -71,7 +77,7 @@
 //! ## [`GroupMetadata`] a.k.a. "what are the members of this group?"
 //!
 //! Similarly to [`OffsetCommit`], Kafka uses code generation to materialise [`GroupMetadata`]
-//! into Java code, and this is actually composed of 2 json definitions, that at compile time
+//! into Java code, and this is composed of 2 json definitions, that at compile time
 //! get turned into Java Classes: [`GroupMetadataKey`] and [`GroupMetadataValue`].
 //!
 //! [`GroupMetadata`] contains the current state of a consumer group, and it used by the Group
@@ -188,6 +194,7 @@
 //! [Log Compaction]: https://kafka.apache.org/documentation/#compaction
 //! [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 //! [Consumer Client]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
+//!
 
 mod errors;
 mod group_metadata;
