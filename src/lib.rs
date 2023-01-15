@@ -1,8 +1,11 @@
-//! A library to parse the content of the [Kafka] [`__consumer_offsets`] internal topic.
+//! A library crate to parse the content of the [Kafka] [`__consumer_offsets`] internal topic.
+//!
+//! This was written by reverse-engineering the parsing logic used in [Kafka], looking at both
+//! [Group Coordinator] and [Consumer Client] source code.
 //!
 //! What this crate does, and what data it can parse, will make
 //! sense only if you have read about how Kafka tracks Consumer Offsets. Especially, what
-//! part the Consumer Group Coordinator(s) play in that. A _great_ resource to learn (or refresh)
+//! part the Consumer [Group Coordinator] play in that. A _great_ resource to learn (or refresh)
 //! how the [Consumer Group Protocol] works, can be found on the [Confluent Developer] website.
 //!
 //! Also, as it will be referenced when documenting the data itself, it is important to know
@@ -183,6 +186,8 @@
 //! [`GroupMetadataKey`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/GroupMetadataKey.json
 //! [`GroupMetadataValue`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/GroupMetadataValue.json
 //! [Log Compaction]: https://kafka.apache.org/documentation/#compaction
+//! [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
+//! [Consumer Client]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
 
 mod errors;
 mod group_metadata;

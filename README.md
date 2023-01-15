@@ -10,7 +10,7 @@
 [Doc_l]: https://docs.rs/konsumer_offsets/latest/konsumer_offsets/
 [Lic_s]: https://img.shields.io/crates/l/konsumer_offsets?style=flat-square&label=L
 
-**A library to parse the content of the [Kafka](https://kafka.apache.org/)
+**A library crate to parse the content of the [Kafka](https://kafka.apache.org/)
 [`__consumer_offsets`](https://kafka.apache.org/documentation/#impl_offsettracking) internal topic.**
 
 ---
