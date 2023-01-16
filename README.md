@@ -22,12 +22,6 @@
 * [ ] Document every error
 * [ ] Document every function/method
 
-## Disclaimer
-
-[Confluent](https://www.confluent.io/about/) is a great place to start if you are looking for a
-commercial Kafka solution, including PaaS, SaaS, training and more.
-**BUT** it is completely unrelated from this crate and any reference to it is purely educational.
-
 ## License
 
 Licensed under either of
