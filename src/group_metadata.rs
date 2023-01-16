@@ -271,7 +271,14 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
 /// Represents a collection of partitions belonging to a specific topic.
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct TopicPartitions {
+    /// Topic name.
     topic: String,
+
+    /// Partitions that belong to the topic.
+    ///
+    /// Depending on the context this struct is used, this could be the entire set
+    /// of partitions a [`TopicPartitions::topic`] is made of, or a sub-set
+    /// (ex. partition assignment).
     partitions: Vec<i32>,
 }
 
