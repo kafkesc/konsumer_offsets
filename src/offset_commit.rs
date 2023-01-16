@@ -16,8 +16,8 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 /// and this is composed of 2 json definitions, that at compile time get turned into Java Classes:
 /// [`OffsetCommitKey`] and [`OffsetCommitValue`].
 ///
-/// **Note:** As this data is parsed from a message, each field is marked with **(KEY)** or **(PAYLOAD)**,
-/// depending to what part of the message they were parsed from.
+/// **Note:** As this data is parsed from a message, each field is marked with **(KEY)**
+/// or **(PAYLOAD)**, depending to what part of the message they were parsed from.
 ///
 /// [Consumer]: https://kafka.apache.org/documentation/#theconsumer
 /// [`OffsetCommitKey`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/OffsetCommitKey.json
@@ -45,8 +45,8 @@ pub struct OffsetCommit {
     /// of this specific key (i.e. `(group,topic,partition)` tuple) from `__consumer_offsets`.
     ///
     /// If you are tracking this data, this can be used as a "can be removed" signal:
-    /// likely all consumers of this particular group are gone, and something removed their
-    /// offset tracking information.
+    /// likely all consumers of this particular group are gone, and something explicitly
+    /// removed their offset tracking information.
     ///
     /// The removal follows the [Log Compaction] rules of Kafka.
     ///
@@ -74,9 +74,9 @@ pub struct OffsetCommit {
 
     /// **(PAYLOAD)** Timestamp of when the offset was committed by the consumer, in milliseconds.
     ///
-    /// This timestamp is produced to `__consumer_offsets` by the group coordinator when handling
-    /// an `OffsetCommitRequest`: to interpret it correctly, its important to know the
-    /// timezone of the group coordinator broker.
+    /// This timestamp is produced to `__consumer_offsets` by the [Group Coordinator]:
+    /// to interpret it correctly, its important to know its timezone.
+    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
     pub commit_timestamp: i64,
 
     /// **(PAYLOAD)** Timestamp of when the offset will fall from topic retention, in milliseconds.

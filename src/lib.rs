@@ -80,21 +80,9 @@
 //! into Java code, and this is composed of 2 json definitions, that at compile time
 //! get turned into Java Classes: [`GroupMetadataKey`] and [`GroupMetadataValue`].
 //!
-//! [`GroupMetadata`] contains the current state of a consumer group, and it used by the Group
-//! Coordinator to track "which consumer is subscribed to what topic" and "which consumer
-//! is assigned of which partition". The metadata are divided into 2 classes:
-//!
-//! Membership metadata:
-//!
-//! 1. Members registered in this group
-//! 2. Current protocol assigned to the group (e.g. partition assignment strategy for consumers)
-//! 3. Protocol metadata associated with group members
-//!
-//! State metadata:
-//!
-//! 1. consumer group state
-//! 2. generation ID
-//! 3. leader ID
+//! [`GroupMetadata`] contains the current state of a consumer group, and it used by the [Group
+//! Coordinator] to track "which consumer is subscribed to what topic" and "which consumer
+//! is assigned of which partition".
 //!
 //! Compared to [`OffsetCommit`], [`GroupMetadata`] appears _relatively infrequently_ in
 //! [`__consumer_offsets`]: this is because it's usually produced when consumers join or leave

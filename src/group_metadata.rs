@@ -4,20 +4,107 @@ use std::any::type_name;
 use crate::errors::KonsumerOffsetsError;
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str, parse_vec_bytes};
 
-/// TODO doc
+/// Contains the current state of a consumer group, and it used by the [Group Coordinator]
+/// to track:
+///
+/// 1. which consumer is subscribed to what topic
+/// 2. which consumer is assigned of which partition
+///
+/// The metadata are divided into 2 classes:
+///
+/// 1. Membership metadata
+///     * Members registered in this group
+///     * Current protocol assigned to the group (e.g. partition assignment strategy for consumers)
+///     * Protocol metadata associated with group members
+/// 2. State metadata
+///     * Consumer group state
+///     * Generation ID
+///     * Leader ID
+///
+/// Compared to [`OffsetCommit`], [`GroupMetadata`] appears _relatively infrequently_ in
+/// [`__consumer_offsets`]: this is because it's usually produced when consumers join or leave
+/// groups.
+///
+/// Kafka uses code generation to materialise [`GroupMetadata`] into Java code,
+/// and this is composed of 2 json definitions, that at compile time get turned into Java Classes:
+/// [`GroupMetadataKey`] and [`GroupMetadataValue`].
+///
+/// **Note:** As this data is parsed from a message, each field is marked with **(KEY)**
+/// or **(PAYLOAD)**, depending to what part of the message they were parsed from.
+///
+/// [`GroupMetadataKey`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/GroupMetadataKey.json
+/// [`GroupMetadataValue`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/GroupMetadataValue.json
+/// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
+/// [`__consumer_offsets`]: https://kafka.apache.org/documentation/#impl_offsettracking
+///
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct GroupMetadata {
+    /// **(KEY)** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
     pub message_version: i16,
+
+    /// **(KEY)** Group that this struct describes.
     pub group: String,
 
+    /// **(PAYLOAD)** Is this from a _tombstone_ message?
+    ///
+    /// If this is `true`, this struct doesn't represent group, but the removal
+    /// of this specific key (i.e. `group`) from `__consumer_offsets`.
+    ///
+    /// If you are tracking this data, this can be used as a "can be removed" signal:
+    /// likely all consumers of this particular group are gone, and something explicitly
+    /// removed their group membership information.
+    ///
+    /// The removal follows the [Log Compaction] rules of Kafka.
+    ///
+    /// [Log Compaction]: https://kafka.apache.org/documentation/#compaction
     pub is_tombstone: bool,
 
+    /// **(PAYLOAD)** Informs the parser of what data and in which format, the rest of the payload contains.
     pub schema_version: i16,
+
+    /// **(PAYLOAD)** The class (type) of [`GroupMetadata::protocol`] used by this group.
+    ///
+    /// Possible values are `consumer` or `connect`.
+    ///
+    /// If value is `consumer`, it indicates that [`GroupMetadata::protocol`] will describes the
+    /// type of [`ConsumerPartitionAssignor`] used by the [Group Coordinator].
+    ///
+    /// If the value is `connect`, it indicates that [`GroupMetadata::protocol`] will describes the
+    /// type of [`ConnectAssignor`] used by the [`WorkerCoordinator`].
+    ///
+    /// [`ConnectAssignor`]: https://github.com/apache/kafka/blob/trunk/connect/runtime/src/main/java/org/apache/kafka/connect/runtime/distributed/ConnectAssignor.java
+    /// [`WorkerCoordinator`]: https://github.com/apache/kafka/blob/trunk/connect/runtime/src/main/java/org/apache/kafka/connect/runtime/distributed/WorkerCoordinator.java
+    /// [`ConsumerPartitionAssignor`]: https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/consumer/ConsumerPartitionAssignor.java
+    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
     pub protocol_type: String,
+
+    /// **(PAYLOAD)** Monotonically increasing integers, changes when group members change.
     pub generation: i32,
+
+    /// **(PAYLOAD)** The protocol of [`GroupMetadata::protocol_type`] used by this group.
+    ///
+    /// If `protocol_type == consumer`, this field will contain the identifier of an implementation
+    /// of [`ConsumerPartitionAssignor`].
+    ///
+    /// If `protocol_type == connect`, this field will contain the identifier of an implementation
+    /// of [`ConnectAssignor`].
+    ///
+    /// [`ConnectAssignor`]: https://github.com/apache/kafka/blob/trunk/connect/runtime/src/main/java/org/apache/kafka/connect/runtime/distributed/ConnectAssignor.java
+    /// [`ConsumerPartitionAssignor`]: https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/consumer/ConsumerPartitionAssignor.java
     pub protocol: String,
+
+    /// **(PAYLOAD)** Identifier (ID) of the [`GroupMetadata::members`] leader.
     pub leader: String,
+
+    /// **(PAYLOAD)** Timestamp of when this Group State was captured, in milliseconds.
+    ///
+    /// This timestamp is produced to `__consumer_offsets` by the [Group Coordinator]:
+    /// to interpret it correctly, its important to know its timezone.
+    ///
+    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
     pub current_state_timestamp: i64,
+
+    /// **(PAYLOAD)** Members that are part of this [`GroupMetadata::group`].
     pub members: Vec<MemberMetadata>,
 }
 
