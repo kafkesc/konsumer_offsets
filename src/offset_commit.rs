@@ -16,8 +16,8 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 /// and this is composed of 2 json definitions, that at compile time get turned into Java Classes:
 /// [`OffsetCommitKey`] and [`OffsetCommitValue`].
 ///
-/// **Note:** As this data is parsed from a message, each field is marked with **(KEY)**
-/// or **(PAYLOAD)**, depending to what part of the message they were parsed from.
+/// **Note:** As this data is parsed from a message, each field is marked with **`(KEY)`**
+/// or **`(PAYLOAD)`**, depending to what part of the message they were parsed from.
 ///
 /// [Consumer]: https://kafka.apache.org/documentation/#theconsumer
 /// [`OffsetCommitKey`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/OffsetCommitKey.json
@@ -27,19 +27,21 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 ///
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct OffsetCommit {
-    /// **(KEY)** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
+    /// **`(KEY)`** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
+    ///
+    /// This controls the bespoke binary parser behaviour.
     pub message_version: i16,
 
-    /// **(KEY)** Group the Consumer belongs to.
+    /// **`(KEY)`** Group the Consumer belongs to.
     pub group: String,
 
-    /// **(KEY)** Topic the Consumer subscribes to.
+    /// **`(KEY)`** Topic the Consumer subscribes to.
     pub topic: String,
 
-    /// **(KEY)** Partition the Consumer is assignee of.
+    /// **`(KEY)`** Partition the Consumer is assignee of.
     pub partition: i32,
 
-    /// **(PAYLOAD)** Is this from a _tombstone_ message?
+    /// **`(PAYLOAD)`** Is this from a _tombstone_ message?
     ///
     /// If this is `true`, this struct doesn't represent any offset, but the removal
     /// of this specific key (i.e. `(group,topic,partition)` tuple) from `__consumer_offsets`.
@@ -53,33 +55,36 @@ pub struct OffsetCommit {
     /// [Log Compaction]: https://kafka.apache.org/documentation/#compaction
     pub is_tombstone: bool,
 
-    /// **(PAYLOAD)** Informs the parser of what data and in which format, the rest of the payload contains.
+    /// **`(PAYLOAD)`** Informs the parser of what data and in which format, the rest of the payload contains.
+    ///
+    /// This controls the bespoke binary parser behaviour.
     pub schema_version: i16,
 
-    /// **(PAYLOAD)** Offset that a [`OffsetCommit::group`] has reached when consuming [`OffsetCommit::partition`] of [`OffsetCommit::topic`].
+    /// **`(PAYLOAD)`** Offset that a [`OffsetCommit::group`] has reached when consuming [`OffsetCommit::partition`] of [`OffsetCommit::topic`].
     pub offset: i64,
 
-    /// **(PAYLOAD)** Leader epoch of the previously consumed record (if one is known).
+    /// **`(PAYLOAD)`** Leader epoch of the previously consumed record (if one is known).
     ///
     /// If a leader epoch is not known, this field will be `-1`. It can be used to
     /// filter out-of-date information, in transitional periods when leader is changing.
     pub leader_epoch: i32,
 
-    /// **(PAYLOAD)** [Consumer] set, optional metadata.
+    /// **`(PAYLOAD)`** [Consumer] set, optional metadata.
     ///
     /// Default consumer behaviour is to leave this empty.
     ///
     /// [Consumer]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
     pub metadata: String,
 
-    /// **(PAYLOAD)** Timestamp of when the offset was committed by the consumer, in milliseconds.
+    /// **`(PAYLOAD)`** Timestamp of when the offset was committed by the consumer, in milliseconds.
     ///
     /// This timestamp is produced to `__consumer_offsets` by the [Group Coordinator]:
     /// to interpret it correctly, its important to know its timezone.
+    ///
     /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
     pub commit_timestamp: i64,
 
-    /// **(PAYLOAD)** Timestamp of when the offset will fall from topic retention, in milliseconds.
+    /// **`(PAYLOAD)`** Timestamp of when the offset will fall from topic retention, in milliseconds.
     ///
     /// **WARNING:** this is no longer supported, and in modern versions of Kafka it will be set to
     /// `-1`. It's here for parse completeness.
@@ -88,6 +93,8 @@ pub struct OffsetCommit {
 
 impl OffsetCommit {
     /// Create [`Self`] from the key part of the message.
+    ///
+    /// The fields marked with **`(KEY)`** are parsed here.
     ///
     /// This is based on the generated `kafka.internals.generated.OffsetCommitKey#read` method.
     pub(crate) fn try_from(parser: &mut BytesParser, message_version: i16) -> Result<Self, KonsumerOffsetsError> {
@@ -101,7 +108,9 @@ impl OffsetCommit {
         })
     }
 
-    /// Finish creating [`Self`] from the payload part of the message.
+    /// Augment [`Self`] from data in the payload part of the message.
+    ///
+    /// The fields marked with **`(PAYLOAD)`** are parsed here.
     ///
     /// This is based on the generated `kafka.internals.generated.OffsetCommitValue#read` method.
     pub(crate) fn parse_payload(&mut self, parser: &mut BytesParser) -> Result<(), KonsumerOffsetsError> {

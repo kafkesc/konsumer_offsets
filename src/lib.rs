@@ -1,7 +1,7 @@
 //! A library crate to parse the content of the [Kafka] [`__consumer_offsets`] internal topic.
 //!
 //! This was written by reverse-engineering the parsing logic used in [Kafka], looking at both
-//! [Group Coordinator] and [Consumer Client] source code.
+//! [Group Coordinator] Broker and [Consumer Client] source code.
 //!
 //! An **extra perk** of this crate, is that it serves also a didactic purpose: it attempts
 //! to documenting really clearly what each struct and field represents, what it means in

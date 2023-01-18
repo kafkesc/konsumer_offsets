@@ -4,8 +4,9 @@ use std::any::type_name;
 use crate::errors::KonsumerOffsetsError;
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str, parse_vec_bytes};
 
-/// Contains the current state of a consumer group, and it used by the [Group Coordinator]
-/// to track:
+/// Contains the current state of a consumer group.
+///
+/// It is used by the [Group Coordinator] Broker to track:
 ///
 /// 1. which consumer is subscribed to what topic
 /// 2. which consumer is assigned of which partition
@@ -36,10 +37,13 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str, parse_vec_bytes};
 /// [`GroupMetadataValue`]: https://github.com/apache/kafka/blob/trunk/core/src/main/resources/common/message/GroupMetadataValue.json
 /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 /// [`__consumer_offsets`]: https://kafka.apache.org/documentation/#impl_offsettracking
+/// [`OffsetCommit`]: crate::OffsetCommit
 ///
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct GroupMetadata {
     /// **(KEY)** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
+    ///
+    /// This controls the bespoke binary parser behaviour.
     pub message_version: i16,
 
     /// **(KEY)** Group that this struct describes.
@@ -60,6 +64,8 @@ pub struct GroupMetadata {
     pub is_tombstone: bool,
 
     /// **(PAYLOAD)** Informs the parser of what data and in which format, the rest of the payload contains.
+    ///
+    /// This controls the bespoke binary parser behaviour.
     pub schema_version: i16,
 
     /// **(PAYLOAD)** The class (type) of [`GroupMetadata::protocol`] used by this group.
@@ -79,6 +85,9 @@ pub struct GroupMetadata {
     pub protocol_type: String,
 
     /// **(PAYLOAD)** Monotonically increasing integers, changes when group members change.
+    ///
+    /// This is useful when concurrent operations get out of order,
+    /// and original order has to be determined.
     pub generation: i32,
 
     /// **(PAYLOAD)** The protocol of [`GroupMetadata::protocol_type`] used by this group.
@@ -94,6 +103,8 @@ pub struct GroupMetadata {
     pub protocol: String,
 
     /// **(PAYLOAD)** Identifier (ID) of the [`GroupMetadata::members`] leader.
+    ///
+    /// This corresponds to the [`MemberMetadata::id`] of one of the [`Self::members`].
     pub leader: String,
 
     /// **(PAYLOAD)** Timestamp of when this Group State was captured, in milliseconds.
@@ -109,9 +120,11 @@ pub struct GroupMetadata {
 }
 
 impl GroupMetadata {
-    /// TODO doc
+    /// Create [`Self`] from the key part of the message.
     ///
-    /// NOTE: This is based on `kafka.internals.generated.GroupMetadataKey#read` method.
+    /// The fields marked with **`(KEY)`** are parsed here.
+    ///
+    /// This is based on the generated `kafka.internals.generated.GroupMetadataKey#read` method.
     pub(crate) fn try_from(parser: &mut BytesParser, message_version: i16) -> Result<Self, KonsumerOffsetsError> {
         Ok(GroupMetadata {
             message_version,
@@ -121,9 +134,11 @@ impl GroupMetadata {
         })
     }
 
-    /// TODO doc
+    /// Augment [`Self`] from data in the payload part of the message.
     ///
-    /// NOTE: This is based on `kafka.internals.generated.GroupMetadataValue#read` method.
+    /// The fields marked with **`(PAYLOAD)`** are parsed here.
+    ///
+    /// This is based on the generated `kafka.internals.generated.GroupMetadataValue#read` method.
     pub(crate) fn parse_payload(&mut self, parser: &mut BytesParser) -> Result<(), KonsumerOffsetsError> {
         self.is_tombstone = false;
 
@@ -156,21 +171,43 @@ impl GroupMetadata {
     }
 }
 
-/// TODO doc
+/// Metadata for a Consumer Group Member.
+///
+/// Note that the words "Member" and "Consumer" can be used interchangeably in this context.
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct MemberMetadata {
+    /// Consumer Group Member identifier.
     pub id: String,
+
     pub group_instance_id: String,
+
+    /// Consumer Client identifier.
+    ///
+    /// This corresponds to the Kafka (client) configuration option `client.id`.
     pub client_id: String,
+
+    /// Consumer Client host.
+    ///
+    /// Usually its IP.
     pub client_host: String,
+
+    /// Maximum time (ms) that Group Coordinator will wait for member to rejoin when rebalancing the [`GroupMetadata::group`].
     pub rebalance_timeout: i32,
+
+    /// Group Coordinator considers member (i.e. consumer) "dead" if it receives no heartbeat after this timeout (ms).
+    ///
+    /// If the container [`GroupMetadata::schema_version`] is `0`, this is used by
+    /// the Group Coordinator in place of [`Self::rebalance_timeout`].
     pub session_timeout: i32,
+
     pub subscription: ConsumerProtocolSubscription,
     pub assignment: ConsumerProtocolAssignment,
 }
 
 impl MemberMetadata {
-    /// NOTE `kafka.internals.generated.GroupMetadataValue.MemberMetadata#read` method.
+    /// Create [`Self`] from data in the payload part of the message.
+    ///
+    /// This is based on the generated `kafka.internals.generated.GroupMetadataValue.MemberMetadata#read` method.
     fn try_from(parser: &mut BytesParser, schema_version: i16) -> Result<Self, KonsumerOffsetsError> {
         let mut member = Self {
             id: parse_str(parser)?,
@@ -207,31 +244,76 @@ impl MemberMetadata {
     }
 }
 
-/// TODO doc
+/// Consumer topic and partition subscriptions.
+///
+/// This describes the subscribed topics, but also additional information that is involved
+/// in that process, including manual topic partition assignment.
+///
+/// This is what the Consumer is explicitly configured with, in contrast with
+/// [`ConsumerProtocolAssignment`] that is instead controlled by the [Group Coordinator] Broker.
+///
+/// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct ConsumerProtocolSubscription {
-    version: i16,
+    /// Subscription (schema) version.
+    ///
+    /// This controls the bespoke binary parser behaviour.
+    schema_version: i16,
+
+    /// Topic that [`Self`] is subscribed to.
+    ///
+    /// This reflects the Consumer own subscription configuration.
     subscribed_topics: Vec<String>,
+
+    /// Optional data provided by a Consumer.
+    ///
+    /// The Consumer sends this to the Group Coordinator, and this can then be used by
+    /// a bespoke Assignor to implement tailor-made logic.
     user_data: Vec<u8>,
+
+    /// Collection of [`TopicPartitions`] that this Consumer has manually assigned to itself.
+    ///
+    /// Note that when a Consumer uses manual partition assignment, it is then excluded
+    /// form automated partition assignment or rebalance operation.
     owned_topic_partitions: Vec<TopicPartitions>,
+
+    /// Generation identifier of the Consumer.
+    ///
+    /// Monotonically increasing integer, changes as subscription changes for a Consumer.
+    ///
+    /// This is useful when concurrent operations get out of order,
+    /// and original order has to be determined.
     generation_id: i32,
+
+    /// Rack identifier of the Consumer.
+    ///
+    /// This is configured in a Consumer (via `client.rack` config), and corresponds to
+    /// the Broker rack identifier (`broker.rack`) that is physically closest.
+    ///
+    /// To take full advantage of [Broker Rack Awareness], the Broker has to be
+    /// configured to use [RackAwareReplicaSelector] (via `replica.selector.class` config).
+    ///
+    /// [RackAwareReplicaSelector]: https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/replica/RackAwareReplicaSelector.java
+    /// [Broker Rack Awareness]: https://kafka.apache.org/documentation/#basic_ops_racks
     rack_id: String,
 }
 
 impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
     type Error = KonsumerOffsetsError;
 
-    /// TODO doc
+    /// Create [`Self`] from data in the payload part of the message.
     ///
-    /// NOTE Based on `org.apache.kafka.common.message.ConsumerProtocolSubscription#read` method.
+    /// This is based on the generated `org.apache.kafka.common.message.ConsumerProtocolSubscription#read` method.
     fn try_from(parser: &mut BytesParser) -> Result<Self, Self::Error> {
         let mut subscription = Self {
-            version: parse_i16(parser)?,
+            schema_version: parse_i16(parser)?,
             ..Default::default()
         };
 
-        if !(0..=3).contains(&subscription.version) {
-            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolSubscriptionVersion(subscription.version));
+        if !(0..=3).contains(&subscription.schema_version) {
+            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolSubscriptionVersion(
+                subscription.schema_version,
+            ));
         }
 
         let subscribed_topics_len = parse_i32(parser)?;
@@ -244,23 +326,25 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
 
         subscription.user_data = parse_vec_bytes(parser)?;
 
-        if subscription.version >= 1 {
+        if subscription.schema_version >= 1 {
             let owned_topic_partitions_len = parse_i32(parser)?;
             if owned_topic_partitions_len > 0 {
                 subscription.owned_topic_partitions = Vec::with_capacity(owned_topic_partitions_len as usize);
                 for _ in 0..owned_topic_partitions_len {
-                    subscription.owned_topic_partitions.push(TopicPartitions::try_from(parser, subscription.version)?);
+                    subscription
+                        .owned_topic_partitions
+                        .push(TopicPartitions::try_from(parser, subscription.schema_version)?);
                 }
             }
         }
 
-        subscription.generation_id = if subscription.version >= 2 {
+        subscription.generation_id = if subscription.schema_version >= 2 {
             parse_i32(parser)?
         } else {
             -1
         };
 
-        if subscription.version >= 3 {
+        if subscription.schema_version >= 3 {
             subscription.rack_id = parse_str(parser)?;
         }
 
@@ -314,35 +398,54 @@ impl TopicPartitions {
     }
 }
 
-/// TODO doc
+/// Consumer partition assignment by the [Group Coordinator].
+///
+/// This is what the Consumer is assigned by [Group Coordinator] Broker, in contrast with
+/// [`ConsumerProtocolSubscription`] that is instead controlled by the Consumer itself.
+///
+/// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct ConsumerProtocolAssignment {
-    version: i16,
+    /// Assignment (schema) version.
+    ///
+    /// This controls the bespoke binary parser behaviour.
+    schema_version: i16,
+
+    /// Collection of [`TopicPartitions`] that this Consumer has been assigned by the [Group Coordinator].
+    ///
+    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
     assigned_topic_partitions: Vec<TopicPartitions>,
+
+    /// Optional data provided by a Consumer.
+    ///
+    /// The Consumer sends this to the Group Coordinator, and this can then be used by
+    /// a bespoke Assignor to implement tailor-made logic.
     user_data: Vec<u8>,
 }
 
 impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
     type Error = KonsumerOffsetsError;
 
-    /// TODO doc
+    /// Create [`Self`] from data in the payload part of the message.
     ///
-    /// NOTE Based on `org.apache.kafka.common.message.ConsumerProtocolAssignment#read` method.
+    /// This is based on the generated `org.apache.kafka.common.message.ConsumerProtocolAssignment#read` method.
     fn try_from(parser: &mut BytesParser) -> Result<Self, Self::Error> {
         let mut assignment = Self {
-            version: parse_i16(parser)?,
+            schema_version: parse_i16(parser)?,
             ..Default::default()
         };
 
-        if !(0..=3).contains(&assignment.version) {
-            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolAssignmentVersion(assignment.version));
+        if !(0..=3).contains(&assignment.schema_version) {
+            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolAssignmentVersion(assignment.schema_version));
         }
 
         let assigned_topic_partitions_len = parse_i32(parser)?;
         if assigned_topic_partitions_len > 0 {
             assignment.assigned_topic_partitions = Vec::with_capacity(assigned_topic_partitions_len as usize);
             for _ in 0..assigned_topic_partitions_len {
-                assignment.assigned_topic_partitions.push(TopicPartitions::try_from(parser, assignment.version)?);
+                assignment
+                    .assigned_topic_partitions
+                    .push(TopicPartitions::try_from(parser, assignment.schema_version)?);
             }
         }
 
