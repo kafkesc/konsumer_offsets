@@ -17,7 +17,7 @@ GroupMetadata {
             rebalance_timeout: 300000,
             session_timeout: 45000,
             subscription: ConsumerProtocolSubscription {
-                version: 1,
+                schema_version: 1,
                 subscribed_topics: [
                     "t01",
                 ],
@@ -27,7 +27,7 @@ GroupMetadata {
                 rack_id: "",
             },
             assignment: ConsumerProtocolAssignment {
-                version: 0,
+                schema_version: 0,
                 assigned_topic_partitions: [
                     TopicPartitions {
                         topic: "t01",
