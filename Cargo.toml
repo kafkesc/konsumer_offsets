@@ -7,7 +7,7 @@ repository = "https://github.com/kafkesc/konsumer_offsets"
 homepage = "https://github.com/kafkesc/konsumer_offsets"
 description = "A library crate to parse the content of the Kafka `__consumer_offsets` internal topic"
 license = "MIT OR Apache-2.0"
-keywords = ["apache", "kafka", "parser", "__consumer_offsets"]
+keywords = ["apache", "kafka", "parser", "consumer_offsets"]
 categories = ["encoding", "network-programming", "parsing"]
 exclude = [
     ".gitignore",
