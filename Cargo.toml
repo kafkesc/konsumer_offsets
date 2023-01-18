@@ -12,6 +12,7 @@ categories = ["encoding", "network-programming", "parsing"]
 exclude = [
     ".gitignore",
     ".github/",
+    "fixtures/",
 ]
 
 [dependencies]
