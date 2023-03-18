@@ -104,6 +104,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+    use crate::utils::is_thread_safe;
 
     #[rstest]
     #[case(01)]
@@ -167,5 +168,10 @@ mod tests {
         assert!(fmt_path.exists());
 
         (fs::read(key_path).unwrap(), fs::read(payload_path).unwrap(), fs::read_to_string(fmt_path).unwrap())
+    }
+
+    #[test]
+    fn test_types_thread_safety() {
+        is_thread_safe::<KonsumerOffsetsData>();
     }
 }
