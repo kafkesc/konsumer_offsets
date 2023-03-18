@@ -66,3 +66,18 @@ pub(crate) fn parse_i32(parser: &mut BytesParser) -> Result<i32, KonsumerOffsets
 pub(crate) fn parse_i64(parser: &mut BytesParser) -> Result<i64, KonsumerOffsetsError> {
     parser.parse_i64().map_err(KonsumerOffsetsError::ByteParsingError)
 }
+
+/// Used in unit tests to verify type is Thread Safe
+///
+/// # Examples
+///
+/// ```rust
+/// use konsumer_offsets::GroupMetadata;
+///
+/// #[test]
+/// fn test_types_thread_safety() {
+///     is_thread_safe::<GroupMetadata>();
+/// }
+/// ```
+#[cfg(test)]
+pub(crate) fn is_thread_safe<T: Sized + Send + Sync + Unpin>() {}
