@@ -20,4 +20,4 @@ bytes_parser = "0.1.4"
 thiserror = "1.0.40"
 
 [dev-dependencies]
-rstest = "0.16.0"
+rstest = "0.17.0"
