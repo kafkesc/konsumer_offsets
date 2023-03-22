@@ -6,7 +6,11 @@
 
 ## Enhancements
 
-* Enforcing marker traits `Sized + Send + Sync + Unpin` for all exported types ([I#1](https://github.com/kafkesc/konsumer_offsets/issues/1))
+* Enforcing marker traits `Sized + Send + Sync + Unpin` for all exported
+  types ([I#1](https://github.com/kafkesc/konsumer_offsets/issues/1))
+* Enabling use of the 
+  ["sparse"](https://blog.rust-lang.org/inside-rust/2023/01/30/cargo-sparse-protocol.html)
+  protocol when interacting with the https://crates.io registry
 
 ## Bug Fixes
 
