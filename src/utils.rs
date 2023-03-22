@@ -67,7 +67,15 @@ pub(crate) fn parse_i64(parser: &mut BytesParser) -> Result<i64, KonsumerOffsets
     parser.parse_i64().map_err(KonsumerOffsetsError::ByteParsingError)
 }
 
-/// Used in unit tests to verify type is Thread Safe
+/// Used in unit tests to verify type is Thread Safe and Async/Await Safe.
+///
+/// It enforces that the given type implements the following standard traits:
+///
+/// * `std::marker::Sized`: type has a constant size known at compile time
+/// * `std::marker::Send`: type is safe to send to another thread
+/// * `std::marker::Sync`: type is Sync if it is safe to share between threads;
+///   type can be Sync if and only if a reference to it is Send
+/// * `std::marker::Unpin`: type can be safely moved after pinning
 ///
 /// # Examples
 ///
