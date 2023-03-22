@@ -66,3 +66,26 @@ pub(crate) fn parse_i32(parser: &mut BytesParser) -> Result<i32, KonsumerOffsets
 pub(crate) fn parse_i64(parser: &mut BytesParser) -> Result<i64, KonsumerOffsetsError> {
     parser.parse_i64().map_err(KonsumerOffsetsError::ByteParsingError)
 }
+
+/// Used in unit tests to verify type is Thread Safe and Async/Await Safe.
+///
+/// It enforces that the given type implements the following standard traits:
+///
+/// * `std::marker::Sized`: type has a constant size known at compile time
+/// * `std::marker::Send`: type is safe to send to another thread
+/// * `std::marker::Sync`: type is Sync if it is safe to share between threads;
+///   type can be Sync if and only if a reference to it is Send
+/// * `std::marker::Unpin`: type can be safely moved after pinning
+///
+/// # Examples
+///
+/// ```rust
+/// use konsumer_offsets::GroupMetadata;
+///
+/// #[test]
+/// fn test_types_thread_safety() {
+///     is_thread_safe::<GroupMetadata>();
+/// }
+/// ```
+#[cfg(test)]
+pub(crate) fn is_thread_safe<T: Sized + Send + Sync + Unpin>() {}

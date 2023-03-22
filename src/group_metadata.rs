@@ -454,3 +454,20 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
         Ok(assignment)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::is_thread_safe;
+    use crate::{
+        ConsumerProtocolAssignment, ConsumerProtocolSubscription, GroupMetadata, MemberMetadata, TopicPartitions,
+    };
+
+    #[test]
+    fn test_types_thread_safety() {
+        is_thread_safe::<GroupMetadata>();
+        is_thread_safe::<MemberMetadata>();
+        is_thread_safe::<ConsumerProtocolSubscription>();
+        is_thread_safe::<TopicPartitions>();
+        is_thread_safe::<ConsumerProtocolAssignment>();
+    }
+}

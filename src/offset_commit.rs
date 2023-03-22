@@ -142,3 +142,14 @@ impl OffsetCommit {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::is_thread_safe;
+    use crate::OffsetCommit;
+
+    #[test]
+    fn test_types_thread_safety() {
+        is_thread_safe::<OffsetCommit>();
+    }
+}

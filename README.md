@@ -25,6 +25,8 @@
   if you read the code, you can go correlate to the [Kafka] codebase that its imitating
 * Parsing is based on [bytes_parser] and errors on [thiserror], so it's easy to read
   and handles result errors idiomatically
+* All types exported by this crate are "Thread Safe" and "Async/Await Safe":
+  we enforce the implementation of `Sized + Send + Sync + Unpin`  
 
 ## License
 

@@ -39,3 +39,14 @@ pub enum KonsumerOffsetsError {
     #[error("Unable to parse {0} for version {1} of {2}")]
     UnableToParseForVersion(String, i16, String),
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::is_thread_safe;
+    use crate::KonsumerOffsetsError;
+
+    #[test]
+    fn test_types_thread_safety() {
+        is_thread_safe::<KonsumerOffsetsError>();
+    }
+}
