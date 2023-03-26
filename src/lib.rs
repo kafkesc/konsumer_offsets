@@ -194,3 +194,10 @@ pub use errors::*;
 pub use group_metadata::*;
 pub use konsumer_offsets_data::*;
 pub use offset_commit::*;
+
+#[cfg(any(
+    all(feature = "ts_int", feature = "ts_chrono"),
+    all(feature = "ts_int", feature = "ts_time"),
+    all(feature = "ts_time", feature = "ts_chrono"),
+))]
+compile_error!("Features \"ts_int (default)\", \"ts_chrono\" and \"ts_time\" are mutually exclusive");
