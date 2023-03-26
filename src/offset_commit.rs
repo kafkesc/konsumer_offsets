@@ -1,6 +1,13 @@
 use bytes_parser::BytesParser;
 
-use crate::errors::KonsumerOffsetsError;
+#[cfg(feature = "ts_chrono")]
+use chrono::NaiveDateTime;
+#[cfg(feature = "ts_time")]
+use time::PrimitiveDateTime;
+
+use crate::errors::{KonsumerOffsetsError, KonsumerOffsetsError::UnsupportedOffsetCommitSchema};
+#[cfg(feature = "ts_chrono")]
+use crate::utils::parse_chrono_naive_datetime;
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 
 /// Offset that a Kafka [Consumer] of a Group has reached when consuming a Partition of a Topic.
@@ -76,19 +83,33 @@ pub struct OffsetCommit {
     /// [Consumer]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
     pub metadata: String,
 
-    /// **`(PAYLOAD)`** Timestamp of when the offset was committed by the consumer, in milliseconds.
+    /// **`(PAYLOAD)`** Timestamp of when the offset was committed by the consumer.
     ///
     /// This timestamp is produced to `__consumer_offsets` by the [Group Coordinator]:
     /// to interpret it correctly, its important to know its timezone.
     ///
-    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
-    pub commit_timestamp: i64,
-
-    /// **`(PAYLOAD)`** Timestamp of when the offset will fall from topic retention, in milliseconds.
+    /// **NOTE:** The type of this field is controlled by the `ts_*` feature flags.
     ///
-    /// **WARNING:** this is no longer supported, and in modern versions of Kafka it will be set to
-    /// `-1`. It's here for parse completeness.
+    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
+    #[cfg(feature = "ts_int")]
+    pub commit_timestamp: i64,
+    #[cfg(feature = "ts_chrono")]
+    pub commit_timestamp: NaiveDateTime,
+    #[cfg(feature = "ts_time")]
+    pub commit_timestamp: PrimitiveDateTime,
+
+    /// **`(PAYLOAD)`** Timestamp of when the offset will fall from topic retention.
+    ///
+    /// **NOTE:** The type of this field is controlled by the `ts_*` feature flags.
+    ///
+    /// **WARNING:** this is no longer supported, and in modern versions of Kafka it will
+    /// be set to `-1`. It's here for parse completeness.
+    #[cfg(feature = "ts_int")]
     pub expire_timestamp: i64,
+    #[cfg(feature = "ts_chrono")]
+    pub expire_timestamp: NaiveDateTime,
+    #[cfg(feature = "ts_time")]
+    pub expire_timestamp: PrimitiveDateTime,
 }
 
 impl OffsetCommit {
@@ -118,7 +139,7 @@ impl OffsetCommit {
 
         self.schema_version = parse_i16(parser)?;
         if !(0..=3).contains(&self.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedOffsetCommitSchema(self.schema_version));
+            return Err(UnsupportedOffsetCommitSchema(self.schema_version));
         }
 
         self.offset = parse_i64(parser)?;
@@ -131,12 +152,54 @@ impl OffsetCommit {
 
         self.metadata = parse_str(parser)?;
 
-        self.commit_timestamp = parse_i64(parser)?;
+        #[cfg(feature = "ts_int")]
+        {
+            self.commit_timestamp = parse_i64(parser)?;
+        }
+
+        #[cfg(feature = "ts_chrono")]
+        {
+            self.commit_timestamp = parse_chrono_naive_datetime(parser)?;
+        }
+
+        // TODO Implement
+        #[cfg(feature = "ts_time")]
+        {
+            self.commit_timestamp = PrimitiveDateTime::default();
+        }
 
         self.expire_timestamp = if self.schema_version == 1 {
-            parse_i64(parser)?
+            #[cfg(feature = "ts_int")]
+            {
+                parse_i64(parser)?
+            }
+
+            #[cfg(feature = "ts_chrono")]
+            {
+                parse_chrono_naive_datetime(parser)?
+            }
+
+            #[cfg(feature = "ts_time")]
+            {
+                // TODO Implement:
+                //   PrimitiveDateTime::try_from(cts_ms)?
+            }
         } else {
-            -1
+            #[cfg(feature = "ts_int")]
+            {
+                -1
+            }
+
+            #[cfg(feature = "ts_chrono")]
+            {
+                NaiveDateTime::default()
+            }
+
+            #[cfg(feature = "ts_time")]
+            {
+                // TODO Implement:
+                //   PrimitiveDateTime::try_from(cts_ms)?
+            }
         };
 
         Ok(())

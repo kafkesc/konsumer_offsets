@@ -1,8 +1,28 @@
-use bytes_parser::BytesParser;
 use std::any::type_name;
 
-use crate::errors::KonsumerOffsetsError;
-use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str, parse_vec_bytes};
+use bytes_parser::BytesParser;
+
+#[cfg(feature = "ts_chrono")]
+use chrono::NaiveDateTime;
+
+#[cfg(feature = "ts_time")]
+use time::PrimitiveDateTime;
+
+use crate::errors::{
+    KonsumerOffsetsError,
+    KonsumerOffsetsError::{
+        ByteParsingError, UnableToParseForVersion, UnsupportedConsumerProtocolAssignmentVersion,
+        UnsupportedConsumerProtocolSubscriptionVersion, UnsupportedGroupMetadataSchema,
+    },
+};
+
+use crate::utils::{parse_i16, parse_i32, parse_str, parse_vec_bytes};
+
+#[cfg(feature = "ts_int")]
+use crate::utils::parse_i64;
+
+#[cfg(feature = "ts_chrono")]
+use crate::utils::parse_chrono_naive_datetime;
 
 /// Contains the current state of a consumer group.
 ///
@@ -107,13 +127,20 @@ pub struct GroupMetadata {
     /// This corresponds to the [`MemberMetadata::id`] of one of the [`Self::members`].
     pub leader: String,
 
-    /// **(PAYLOAD)** Timestamp of when this Group State was captured, in milliseconds.
+    /// **(PAYLOAD)** Timestamp of when this Group State was captured.
     ///
     /// This timestamp is produced to `__consumer_offsets` by the [Group Coordinator]:
     /// to interpret it correctly, its important to know its timezone.
     ///
+    /// **NOTE:** The type of this field is controlled by the `ts_*` feature flags.
+    ///
     /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
+    #[cfg(feature = "ts_int")]
     pub current_state_timestamp: i64,
+    #[cfg(feature = "ts_chrono")]
+    pub current_state_timestamp: NaiveDateTime,
+    #[cfg(feature = "ts_time")]
+    pub current_state_timestamp: PrimitiveDateTime,
 
     /// **(PAYLOAD)** Members that are part of this [`GroupMetadata::group`].
     pub members: Vec<MemberMetadata>,
@@ -144,7 +171,7 @@ impl GroupMetadata {
 
         self.schema_version = parse_i16(parser)?;
         if !(0..=3).contains(&self.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedGroupMetadataSchema(self.schema_version));
+            return Err(UnsupportedGroupMetadataSchema(self.schema_version));
         }
 
         self.protocol_type = parse_str(parser)?;
@@ -156,9 +183,37 @@ impl GroupMetadata {
         self.leader = parse_str(parser)?;
 
         self.current_state_timestamp = if self.schema_version >= 2 {
-            parse_i64(parser)?
+            #[cfg(feature = "ts_int")]
+            {
+                parse_i64(parser)?
+            }
+
+            #[cfg(feature = "ts_chrono")]
+            {
+                parse_chrono_naive_datetime(parser)?
+            }
+
+            #[cfg(feature = "ts_time")]
+            {
+                // TODO Implement:
+                //   PrimitiveDateTime::try_from(cts_ms)?
+            }
         } else {
-            -1
+            #[cfg(feature = "ts_int")]
+            {
+                -1
+            }
+
+            #[cfg(feature = "ts_chrono")]
+            {
+                NaiveDateTime::default()
+            }
+
+            #[cfg(feature = "ts_time")]
+            {
+                // TODO Implement:
+                //   PrimitiveDateTime::try_from(cts_ms)?
+            }
         };
 
         let members_len = parse_i32(parser)?;
@@ -231,13 +286,11 @@ impl MemberMetadata {
         member.session_timeout = parse_i32(parser)?;
 
         let subscription_bytes_len = parse_i32(parser)?;
-        let mut subscription_parser =
-            parser.from_slice(subscription_bytes_len as usize).map_err(KonsumerOffsetsError::ByteParsingError)?;
+        let mut subscription_parser = parser.from_slice(subscription_bytes_len as usize).map_err(ByteParsingError)?;
         member.subscription = ConsumerProtocolSubscription::try_from(&mut subscription_parser)?;
 
         let assignment_bytes_len = parse_i32(parser)?;
-        let mut assignment_parser =
-            parser.from_slice(assignment_bytes_len as usize).map_err(KonsumerOffsetsError::ByteParsingError)?;
+        let mut assignment_parser = parser.from_slice(assignment_bytes_len as usize).map_err(ByteParsingError)?;
         member.assignment = ConsumerProtocolAssignment::try_from(&mut assignment_parser)?;
 
         Ok(member)
@@ -311,9 +364,7 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
         };
 
         if !(0..=3).contains(&subscription.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolSubscriptionVersion(
-                subscription.schema_version,
-            ));
+            return Err(UnsupportedConsumerProtocolSubscriptionVersion(subscription.schema_version));
         }
 
         let subscribed_topics_len = parse_i32(parser)?;
@@ -374,7 +425,7 @@ impl TopicPartitions {
     /// residing in the [Kafka codebase](https://github.com/apache/kafka).
     fn try_from(parser: &mut BytesParser, version: i16) -> Result<Self, KonsumerOffsetsError> {
         if version > 3 {
-            return Err(KonsumerOffsetsError::UnableToParseForVersion(
+            return Err(UnableToParseForVersion(
                 type_name::<TopicPartitions>().to_string(),
                 version,
                 type_name::<ConsumerProtocolSubscription>().to_string(),
@@ -436,7 +487,7 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
         };
 
         if !(0..=3).contains(&assignment.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedConsumerProtocolAssignmentVersion(assignment.schema_version));
+            return Err(UnsupportedConsumerProtocolAssignmentVersion(assignment.schema_version));
         }
 
         let assigned_topic_partitions_len = parse_i32(parser)?;

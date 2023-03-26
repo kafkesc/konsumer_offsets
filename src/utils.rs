@@ -1,6 +1,11 @@
 use bytes_parser::BytesParser;
 
+#[cfg(feature = "ts_chrono")]
+use chrono::NaiveDateTime;
+
 use crate::errors::KonsumerOffsetsError;
+#[cfg(feature = "ts_chrono")]
+use crate::errors::KonsumerOffsetsError::ChronoNaiveDateTimeParsingError;
 
 /// A [`String`] parser, tailor-made for `__consumer_offsets` messages.
 ///
@@ -65,6 +70,12 @@ pub(crate) fn parse_i32(parser: &mut BytesParser) -> Result<i32, KonsumerOffsets
 ///     at the beginning of the [`i64`] we want to parse.
 pub(crate) fn parse_i64(parser: &mut BytesParser) -> Result<i64, KonsumerOffsetsError> {
     parser.parse_i64().map_err(KonsumerOffsetsError::ByteParsingError)
+}
+
+#[cfg(feature = "ts_chrono")]
+pub(crate) fn parse_chrono_naive_datetime(parser: &mut BytesParser) -> Result<NaiveDateTime, KonsumerOffsetsError> {
+    let millis = parse_i64(parser)?;
+    NaiveDateTime::from_timestamp_millis(millis).ok_or(ChronoNaiveDateTimeParsingError(millis))
 }
 
 /// Used in unit tests to verify type is Thread Safe and Async/Await Safe.

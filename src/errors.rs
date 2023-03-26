@@ -15,6 +15,11 @@ pub enum KonsumerOffsetsError {
     #[error("Failure while parsing bytes: {0}")]
     ByteParsingError(#[source] BytesParserError),
 
+    #[cfg(feature = "ts_chrono")]
+    /// An error occurred when parsing milliseconds to [`chrono::NaiveDateTime`].
+    #[error("Failed to parse milliseconds into chrono::NaiveDateTime: {0}")]
+    ChronoNaiveDateTimeParsingError(i64),
+
     /// Message key refers to a version format which this crate doesn't currently support.
     #[error("Encountered a not (yet) supported message version: {0}")]
     UnsupportedMessageVersion(i16),
