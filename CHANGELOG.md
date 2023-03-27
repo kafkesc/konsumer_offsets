@@ -4,11 +4,19 @@
 
 ## Features
 
+* `ts_int`: Default feature flag to represent timestamps using `i64` (same as previous version)
+* `ts_chrono`: Optional feature flag to represent timestamps using
+  [`chrono::DateTime<Utc>`](https://docs.rs/chrono/latest/chrono/struct.DateTime.html#method.from_utc)
+  ([I#2](https://github.com/kafkesc/konsumer_offsets/issues/2))
+* `ts_time`: Optional feature flag to represent timestamps using
+  [`time::OffsetDateTime`](https://time-rs.github.io/api/time/struct.OffsetDateTime.html#method.from_unix_timestamp_nanos)
+  ([I#2](https://github.com/kafkesc/konsumer_offsets/issues/2))
+
 ## Enhancements
 
-* Enforcing marker traits `Sized + Send + Sync + Unpin` for all exported
+* Enforced marker traits `Sized + Send + Sync + Unpin` for all exported
   types ([I#1](https://github.com/kafkesc/konsumer_offsets/issues/1))
-* Enabling use of the 
+* Enabled use of the 
   ["sparse"](https://blog.rust-lang.org/inside-rust/2023/01/30/cargo-sparse-protocol.html)
   protocol when interacting with the https://crates.io registry
 

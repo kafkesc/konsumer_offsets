@@ -18,6 +18,14 @@ exclude = [
 [dependencies]
 bytes_parser = "0.1.4"
 thiserror = "1.0.40"
+chrono = { version = "0.4.24", optional = true, default-features = false, features = ["clock", "std"] }
+time = { version = "0.3.20", optional = true, default-features = false, features = ["std"] }
 
 [dev-dependencies]
 rstest = "0.17.0"
+
+[features]
+default = ["ts_int"]
+ts_int = []
+ts_chrono = ["dep:chrono"]
+ts_time = ["dep:time"]

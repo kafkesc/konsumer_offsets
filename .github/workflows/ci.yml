@@ -43,13 +43,37 @@ jobs:
           command: fmt
           args: --all -- --check
 
-      - name: Cargo clippy
+      - name: "Cargo clippy (features: +default)"
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: -- -D warnings
 
-      - name: Cargo test
+      - name: "Cargo clippy (features: -default +ts_chrono)"
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --features ts_chrono -- -D warnings
+
+      - name: "Cargo clippy (features: -default +ts_time)"
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --features ts_chrono -- -D warnings
+
+      - name: "Cargo test (features: +default)"
         uses: actions-rs/cargo@v1
         with:
           command: test
+
+      - name: "Cargo test (features: -default +ts_chrono)"
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features ts_chrono
+
+      - name: "Cargo test (features: -default +ts_time)"
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features ts_time

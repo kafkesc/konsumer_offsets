@@ -15,6 +15,16 @@ pub enum KonsumerOffsetsError {
     #[error("Failure while parsing bytes: {0}")]
     ByteParsingError(#[source] BytesParserError),
 
+    #[cfg(feature = "ts_chrono")]
+    /// An error occurred when parsing milliseconds to [`chrono::DateTime<Utc>`].
+    #[error("Failed to parse milliseconds into chrono::DateTime<Utc>: {0}")]
+    ChronoDateTimeUtcParsingError(i64),
+
+    #[cfg(feature = "ts_time")]
+    /// An error occurred when parsing milliseconds to [`time::OffsetDateTime`].
+    #[error("Failed to parse milliseconds into time::OffsetDateTime: {0}")]
+    TimeOffsetDateTimeParsingError(#[from] time::error::ComponentRange),
+
     /// Message key refers to a version format which this crate doesn't currently support.
     #[error("Encountered a not (yet) supported message version: {0}")]
     UnsupportedMessageVersion(i16),

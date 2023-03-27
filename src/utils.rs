@@ -67,6 +67,41 @@ pub(crate) fn parse_i64(parser: &mut BytesParser) -> Result<i64, KonsumerOffsets
     parser.parse_i64().map_err(KonsumerOffsetsError::ByteParsingError)
 }
 
+/// Wraps the result of [`parse_i64`] into a [`chrono::DateTime<Utc>`].
+///
+/// # Arguments
+///
+/// * `parser` - A [`BytesParser`] with its internal cursor pointing
+///     at the beginning of the [`i64`] we want to parse.
+#[cfg(feature = "ts_chrono")]
+pub(crate) fn parse_chrono_datetime_utc(
+    parser: &mut BytesParser,
+) -> Result<chrono::DateTime<chrono::Utc>, KonsumerOffsetsError> {
+    let millis = parse_i64(parser)?;
+
+    Ok(chrono::DateTime::<chrono::Utc>::from_utc(
+        chrono::NaiveDateTime::from_timestamp_millis(millis)
+            .ok_or(KonsumerOffsetsError::ChronoDateTimeUtcParsingError(millis))?,
+        chrono::Utc,
+    ))
+}
+
+/// Wraps the result of [`parse_i64`] into a [`time::OffsetDateTime`].
+///
+/// # Arguments
+///
+/// * `parser` - A [`BytesParser`] with its internal cursor pointing
+///     at the beginning of the [`i64`] we want to parse.
+#[cfg(feature = "ts_time")]
+pub(crate) fn parse_time_offset_datetime(
+    parser: &mut BytesParser,
+) -> Result<time::OffsetDateTime, KonsumerOffsetsError> {
+    let millis = parse_i64(parser)?;
+
+    time::OffsetDateTime::from_unix_timestamp_nanos(millis as i128 * 1_000_000) //< ms to ns
+        .map_err(KonsumerOffsetsError::TimeOffsetDateTimeParsingError)
+}
+
 /// Used in unit tests to verify type is Thread Safe and Async/Await Safe.
 ///
 /// It enforces that the given type implements the following standard traits:

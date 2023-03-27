@@ -1,6 +1,6 @@
 use bytes_parser::BytesParser;
 
-use crate::errors::KonsumerOffsetsError;
+use crate::errors::{KonsumerOffsetsError, KonsumerOffsetsError::UnsupportedOffsetCommitSchema};
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 
 /// Offset that a Kafka [Consumer] of a Group has reached when consuming a Partition of a Topic.
@@ -25,7 +25,8 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 /// [Offset Tracking]: https://kafka.apache.org/documentation/#impl_offsettracking
 ///
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(any(feature = "ts_int", feature = "ts_chrono"), derive(Default))]
 pub struct OffsetCommit {
     /// **`(KEY)`** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
     ///
@@ -76,19 +77,52 @@ pub struct OffsetCommit {
     /// [Consumer]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
     pub metadata: String,
 
-    /// **`(PAYLOAD)`** Timestamp of when the offset was committed by the consumer, in milliseconds.
+    /// **`(PAYLOAD)`** Timestamp of when the offset was committed by the consumer.
     ///
     /// This timestamp is produced to `__consumer_offsets` by the [Group Coordinator]:
     /// to interpret it correctly, its important to know its timezone.
     ///
-    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
-    pub commit_timestamp: i64,
-
-    /// **`(PAYLOAD)`** Timestamp of when the offset will fall from topic retention, in milliseconds.
+    /// **NOTE:** The type of this field is controlled by the `ts_*` feature flags.
     ///
-    /// **WARNING:** this is no longer supported, and in modern versions of Kafka it will be set to
-    /// `-1`. It's here for parse completeness.
+    /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
+    #[cfg(feature = "ts_int")]
+    pub commit_timestamp: i64,
+    #[cfg(feature = "ts_chrono")]
+    pub commit_timestamp: chrono::DateTime<chrono::Utc>,
+    #[cfg(feature = "ts_time")]
+    pub commit_timestamp: time::OffsetDateTime,
+
+    /// **`(PAYLOAD)`** Timestamp of when the offset will fall from topic retention.
+    ///
+    /// **NOTE:** The type of this field is controlled by the `ts_*` feature flags.
+    ///
+    /// **WARNING:** this is no longer supported, and in modern versions of Kafka it will
+    /// be set to `-1`. It's here for parse completeness.
+    #[cfg(feature = "ts_int")]
     pub expire_timestamp: i64,
+    #[cfg(feature = "ts_chrono")]
+    pub expire_timestamp: chrono::DateTime<chrono::Utc>,
+    #[cfg(feature = "ts_time")]
+    pub expire_timestamp: time::OffsetDateTime,
+}
+
+#[cfg(feature = "ts_time")]
+impl Default for OffsetCommit {
+    fn default() -> Self {
+        Self {
+            message_version: Default::default(),
+            group: Default::default(),
+            topic: Default::default(),
+            partition: Default::default(),
+            is_tombstone: Default::default(),
+            schema_version: Default::default(),
+            offset: Default::default(),
+            leader_epoch: Default::default(),
+            metadata: Default::default(),
+            commit_timestamp: time::OffsetDateTime::UNIX_EPOCH,
+            expire_timestamp: time::OffsetDateTime::UNIX_EPOCH,
+        }
+    }
 }
 
 impl OffsetCommit {
@@ -118,7 +152,7 @@ impl OffsetCommit {
 
         self.schema_version = parse_i16(parser)?;
         if !(0..=3).contains(&self.schema_version) {
-            return Err(KonsumerOffsetsError::UnsupportedOffsetCommitSchema(self.schema_version));
+            return Err(UnsupportedOffsetCommitSchema(self.schema_version));
         }
 
         self.offset = parse_i64(parser)?;
@@ -131,12 +165,51 @@ impl OffsetCommit {
 
         self.metadata = parse_str(parser)?;
 
-        self.commit_timestamp = parse_i64(parser)?;
+        #[cfg(feature = "ts_int")]
+        {
+            self.commit_timestamp = parse_i64(parser)?;
+        }
+
+        #[cfg(feature = "ts_chrono")]
+        {
+            self.commit_timestamp = crate::utils::parse_chrono_datetime_utc(parser)?;
+        }
+
+        #[cfg(feature = "ts_time")]
+        {
+            self.commit_timestamp = crate::utils::parse_time_offset_datetime(parser)?
+        }
 
         self.expire_timestamp = if self.schema_version == 1 {
-            parse_i64(parser)?
+            #[cfg(feature = "ts_int")]
+            {
+                parse_i64(parser)?
+            }
+
+            #[cfg(feature = "ts_chrono")]
+            {
+                crate::utils::parse_chrono_datetime_utc(parser)?
+            }
+
+            #[cfg(feature = "ts_time")]
+            {
+                crate::utils::parse_time_offset_datetime(parser)?
+            }
         } else {
-            -1
+            #[cfg(feature = "ts_int")]
+            {
+                -1
+            }
+
+            #[cfg(feature = "ts_chrono")]
+            {
+                chrono::DateTime::<chrono::Utc>::default()
+            }
+
+            #[cfg(feature = "ts_time")]
+            {
+                time::OffsetDateTime::UNIX_EPOCH
+            }
         };
 
         Ok(())
