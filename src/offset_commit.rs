@@ -108,12 +108,19 @@ pub struct OffsetCommit {
 
 #[cfg(feature = "ts_time")]
 impl Default for OffsetCommit {
-    #[allow(unconditional_recursion)]
     fn default() -> Self {
         Self {
+            message_version: Default::default(),
+            group: Default::default(),
+            topic: Default::default(),
+            partition: Default::default(),
+            is_tombstone: Default::default(),
+            schema_version: Default::default(),
+            offset: Default::default(),
+            leader_epoch: Default::default(),
+            metadata: Default::default(),
             commit_timestamp: time::OffsetDateTime::UNIX_EPOCH,
             expire_timestamp: time::OffsetDateTime::UNIX_EPOCH,
-            ..Default::default()
         }
     }
 }

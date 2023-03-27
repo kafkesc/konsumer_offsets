@@ -136,11 +136,18 @@ pub struct GroupMetadata {
 
 #[cfg(feature = "ts_time")]
 impl Default for GroupMetadata {
-    #[allow(unconditional_recursion)]
     fn default() -> Self {
         Self {
+            message_version: Default::default(),
+            group: Default::default(),
+            is_tombstone: Default::default(),
+            schema_version: Default::default(),
+            protocol_type: Default::default(),
+            generation: Default::default(),
+            protocol: Default::default(),
+            leader: Default::default(),
             current_state_timestamp: time::OffsetDateTime::UNIX_EPOCH,
-            ..Default::default()
+            members: Default::default(),
         }
     }
 }
