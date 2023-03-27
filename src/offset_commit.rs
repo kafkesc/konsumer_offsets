@@ -1,13 +1,6 @@
 use bytes_parser::BytesParser;
 
-#[cfg(feature = "ts_chrono")]
-use chrono::NaiveDateTime;
-#[cfg(feature = "ts_time")]
-use time::PrimitiveDateTime;
-
 use crate::errors::{KonsumerOffsetsError, KonsumerOffsetsError::UnsupportedOffsetCommitSchema};
-#[cfg(feature = "ts_chrono")]
-use crate::utils::parse_chrono_naive_datetime;
 use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 
 /// Offset that a Kafka [Consumer] of a Group has reached when consuming a Partition of a Topic.
@@ -32,7 +25,8 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 /// [Offset Tracking]: https://kafka.apache.org/documentation/#impl_offsettracking
 ///
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(any(feature = "ts_int", feature = "ts_chrono"), derive(Default))]
 pub struct OffsetCommit {
     /// **`(KEY)`** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
     ///
@@ -94,9 +88,9 @@ pub struct OffsetCommit {
     #[cfg(feature = "ts_int")]
     pub commit_timestamp: i64,
     #[cfg(feature = "ts_chrono")]
-    pub commit_timestamp: NaiveDateTime,
+    pub commit_timestamp: chrono::DateTime<chrono::Utc>,
     #[cfg(feature = "ts_time")]
-    pub commit_timestamp: PrimitiveDateTime,
+    pub commit_timestamp: time::OffsetDateTime,
 
     /// **`(PAYLOAD)`** Timestamp of when the offset will fall from topic retention.
     ///
@@ -107,9 +101,21 @@ pub struct OffsetCommit {
     #[cfg(feature = "ts_int")]
     pub expire_timestamp: i64,
     #[cfg(feature = "ts_chrono")]
-    pub expire_timestamp: NaiveDateTime,
+    pub expire_timestamp: chrono::DateTime<chrono::Utc>,
     #[cfg(feature = "ts_time")]
-    pub expire_timestamp: PrimitiveDateTime,
+    pub expire_timestamp: time::OffsetDateTime,
+}
+
+#[cfg(feature = "ts_time")]
+impl Default for OffsetCommit {
+    #[allow(unconditional_recursion)]
+    fn default() -> Self {
+        Self {
+            commit_timestamp: time::OffsetDateTime::UNIX_EPOCH,
+            expire_timestamp: time::OffsetDateTime::UNIX_EPOCH,
+            ..Default::default()
+        }
+    }
 }
 
 impl OffsetCommit {
@@ -159,13 +165,12 @@ impl OffsetCommit {
 
         #[cfg(feature = "ts_chrono")]
         {
-            self.commit_timestamp = parse_chrono_naive_datetime(parser)?;
+            self.commit_timestamp = crate::utils::parse_chrono_datetime_utc(parser)?;
         }
 
-        // TODO Implement
         #[cfg(feature = "ts_time")]
         {
-            self.commit_timestamp = PrimitiveDateTime::default();
+            self.commit_timestamp = crate::utils::parse_time_offset_datetime(parser)?
         }
 
         self.expire_timestamp = if self.schema_version == 1 {
@@ -176,13 +181,12 @@ impl OffsetCommit {
 
             #[cfg(feature = "ts_chrono")]
             {
-                parse_chrono_naive_datetime(parser)?
+                crate::utils::parse_chrono_datetime_utc(parser)?
             }
 
             #[cfg(feature = "ts_time")]
             {
-                // TODO Implement:
-                //   PrimitiveDateTime::try_from(cts_ms)?
+                crate::utils::parse_time_offset_datetime(parser)?
             }
         } else {
             #[cfg(feature = "ts_int")]
@@ -192,13 +196,12 @@ impl OffsetCommit {
 
             #[cfg(feature = "ts_chrono")]
             {
-                NaiveDateTime::default()
+                chrono::DateTime::<chrono::Utc>::default()
             }
 
             #[cfg(feature = "ts_time")]
             {
-                // TODO Implement:
-                //   PrimitiveDateTime::try_from(cts_ms)?
+                time::OffsetDateTime::UNIX_EPOCH
             }
         };
 

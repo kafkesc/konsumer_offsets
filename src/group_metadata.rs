@@ -2,12 +2,6 @@ use std::any::type_name;
 
 use bytes_parser::BytesParser;
 
-#[cfg(feature = "ts_chrono")]
-use chrono::NaiveDateTime;
-
-#[cfg(feature = "ts_time")]
-use time::PrimitiveDateTime;
-
 use crate::errors::{
     KonsumerOffsetsError,
     KonsumerOffsetsError::{
@@ -15,14 +9,7 @@ use crate::errors::{
         UnsupportedConsumerProtocolSubscriptionVersion, UnsupportedGroupMetadataSchema,
     },
 };
-
 use crate::utils::{parse_i16, parse_i32, parse_str, parse_vec_bytes};
-
-#[cfg(feature = "ts_int")]
-use crate::utils::parse_i64;
-
-#[cfg(feature = "ts_chrono")]
-use crate::utils::parse_chrono_naive_datetime;
 
 /// Contains the current state of a consumer group.
 ///
@@ -59,7 +46,8 @@ use crate::utils::parse_chrono_naive_datetime;
 /// [`__consumer_offsets`]: https://kafka.apache.org/documentation/#impl_offsettracking
 /// [`OffsetCommit`]: crate::OffsetCommit
 ///
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(any(feature = "ts_int", feature = "ts_chrono"), derive(Default))]
 pub struct GroupMetadata {
     /// **(KEY)** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
     ///
@@ -138,12 +126,23 @@ pub struct GroupMetadata {
     #[cfg(feature = "ts_int")]
     pub current_state_timestamp: i64,
     #[cfg(feature = "ts_chrono")]
-    pub current_state_timestamp: NaiveDateTime,
+    pub current_state_timestamp: chrono::DateTime<chrono::Utc>,
     #[cfg(feature = "ts_time")]
-    pub current_state_timestamp: PrimitiveDateTime,
+    pub current_state_timestamp: time::OffsetDateTime,
 
     /// **(PAYLOAD)** Members that are part of this [`GroupMetadata::group`].
     pub members: Vec<MemberMetadata>,
+}
+
+#[cfg(feature = "ts_time")]
+impl Default for GroupMetadata {
+    #[allow(unconditional_recursion)]
+    fn default() -> Self {
+        Self {
+            current_state_timestamp: time::OffsetDateTime::UNIX_EPOCH,
+            ..Default::default()
+        }
+    }
 }
 
 impl GroupMetadata {
@@ -185,18 +184,17 @@ impl GroupMetadata {
         self.current_state_timestamp = if self.schema_version >= 2 {
             #[cfg(feature = "ts_int")]
             {
-                parse_i64(parser)?
+                crate::utils::parse_i64(parser)?
             }
 
             #[cfg(feature = "ts_chrono")]
             {
-                parse_chrono_naive_datetime(parser)?
+                crate::utils::parse_chrono_datetime_utc(parser)?
             }
 
             #[cfg(feature = "ts_time")]
             {
-                // TODO Implement:
-                //   PrimitiveDateTime::try_from(cts_ms)?
+                crate::utils::parse_time_offset_datetime(parser)?
             }
         } else {
             #[cfg(feature = "ts_int")]
@@ -206,13 +204,12 @@ impl GroupMetadata {
 
             #[cfg(feature = "ts_chrono")]
             {
-                NaiveDateTime::default()
+                chrono::DateTime::<chrono::Utc>::default()
             }
 
             #[cfg(feature = "ts_time")]
             {
-                // TODO Implement:
-                //   PrimitiveDateTime::try_from(cts_ms)?
+                time::OffsetDateTime::UNIX_EPOCH
             }
         };
 
