@@ -1,0 +1,13 @@
+OffsetCommit {
+    message_version: 1,
+    group: "ivan-experimental-consumer",
+    topic: "__consumer_offsets",
+    partition: 46,
+    is_tombstone: false,
+    schema_version: 3,
+    offset: 97507,
+    leader_epoch: -1,
+    metadata: "",
+    commit_timestamp: 2023-01-04T22:23:29.232Z,
+    expire_timestamp: 1970-01-01T00:00:00Z,
+}

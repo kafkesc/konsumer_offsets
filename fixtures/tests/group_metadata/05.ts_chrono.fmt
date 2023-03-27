@@ -1,0 +1,12 @@
+GroupMetadata {
+    message_version: 2,
+    group: "kafkesc-devcluster-group-id",
+    is_tombstone: false,
+    schema_version: 3,
+    protocol_type: "consumer",
+    generation: 8,
+    protocol: "",
+    leader: "",
+    current_state_timestamp: 2023-01-04T22:22:44.792Z,
+    members: [],
+}

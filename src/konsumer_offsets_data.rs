@@ -113,7 +113,12 @@ mod tests {
     #[case(04)]
     #[case(05)]
     fn from_offset_commit(#[case] fixture_id: u16) {
-        let (key_bytes, payload_bytes, fmt_string) = read_offset_commit_fixture(fixture_id);
+        #[cfg(feature = "ts_int")]
+        let (key_bytes, payload_bytes, fmt_string) = read_offset_commit_fixture(fixture_id, "ts_int");
+        #[cfg(feature = "ts_chrono")]
+        let (key_bytes, payload_bytes, fmt_string) = read_offset_commit_fixture(fixture_id, "ts_chrono");
+        #[cfg(feature = "ts_time")]
+        let (key_bytes, payload_bytes, fmt_string) = read_offset_commit_fixture(fixture_id, "ts_time");
 
         let konsumer_offsets_data =
             KonsumerOffsetsData::try_from_bytes(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
@@ -134,7 +139,12 @@ mod tests {
     #[case(04)]
     #[case(05)]
     fn from_group_metadata(#[case] fixture_id: u16) {
-        let (key_bytes, payload_bytes, fmt_string) = read_group_metadata_fixture(fixture_id);
+        #[cfg(feature = "ts_int")]
+        let (key_bytes, payload_bytes, fmt_string) = read_group_metadata_fixture(fixture_id, "ts_int");
+        #[cfg(feature = "ts_chrono")]
+        let (key_bytes, payload_bytes, fmt_string) = read_group_metadata_fixture(fixture_id, "ts_chrono");
+        #[cfg(feature = "ts_time")]
+        let (key_bytes, payload_bytes, fmt_string) = read_group_metadata_fixture(fixture_id, "ts_time");
 
         let konsumer_offsets_data =
             KonsumerOffsetsData::try_from_bytes(Some(key_bytes.as_slice()), Some(payload_bytes.as_slice()));
@@ -148,20 +158,20 @@ mod tests {
         }
     }
 
-    fn read_offset_commit_fixture(fixture_id: u16) -> (Vec<u8>, Vec<u8>, String) {
-        read_fixture("offset_commit", fixture_id)
+    fn read_offset_commit_fixture(fixture_id: u16, ts_feature: &str) -> (Vec<u8>, Vec<u8>, String) {
+        read_fixture("offset_commit", fixture_id, ts_feature)
     }
 
-    fn read_group_metadata_fixture(fixture_id: u16) -> (Vec<u8>, Vec<u8>, String) {
-        read_fixture("group_metadata", fixture_id)
+    fn read_group_metadata_fixture(fixture_id: u16, ts_feature: &str) -> (Vec<u8>, Vec<u8>, String) {
+        read_fixture("group_metadata", fixture_id, ts_feature)
     }
 
-    fn read_fixture(fixture_name: &str, fixture_id: u16) -> (Vec<u8>, Vec<u8>, String) {
+    fn read_fixture(fixture_name: &str, fixture_id: u16, ts_feature: &str) -> (Vec<u8>, Vec<u8>, String) {
         let k = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.key");
         let key_path = Path::new(k.as_str());
         let p = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.payload");
         let payload_path = Path::new(p.as_str());
-        let f = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.fmt");
+        let f = format!("fixtures/tests/{fixture_name}/{fixture_id:02}.{ts_feature}.fmt");
         let fmt_path = Path::new(f.as_str());
         assert!(key_path.exists());
         assert!(payload_path.exists());
