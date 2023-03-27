@@ -1,3 +1,5 @@
+//! # Konsumer_Offsets: parse Kafka `__consumer_offsets`
+//!
 //! A library crate to parse the content of the [Kafka] [`__consumer_offsets`] internal topic.
 //!
 //! This was written by reverse-engineering the parsing logic used in [Kafka], looking at both
@@ -7,7 +9,17 @@
 //! to documenting really clearly what each struct and field represents, what it means in
 //! the context of Kafka _"coordinated consumption of messages"_, and how it was parsed.
 //!
-//! # Before you dive in
+//! ## Features
+//!
+//! Features:
+//!
+//! * `ts_int`: use `i64` to represent Unix Timestamps (conflicts with `ts_chrono` and `ts_time`)
+//! * `ts_chrono`: use [`chrono::DateTime<Utc>`] to represent Unix Timestamps (conflicts with `ts_int` and `ts_time`)
+//! * `ts_time`: use [`time::OffsetDateTime`] to represent Unix Timestamps (conflicts with `ts_chrono` and `ts_int`)
+//!
+//! Default features: `ts_int`.
+//!
+//! ## Before you dive in
 //!
 //! What this crate does, and what data it can parse, will make
 //! sense only if you have read about how Kafka tracks Consumer Offsets. Especially, what
@@ -19,7 +31,7 @@
 //! rules, including the handling of _tombstone_ messages, used to "mark for deletion" all messages
 //! of the given key.
 //!
-//! # Example
+//! ## Example
 //!
 //! Here is how the code should be structured to handle the flow of messages coming out of
 //! the [`__consumer_offsets`] topic.
@@ -46,7 +58,7 @@
 //! }
 //! ```
 //!
-//! # 1 topic, 2 different data types
+//! ## 1 topic, 2 different data types
 //!
 //! The messages (a.k.a. records) in [`__consumer_offsets`] are encoded using a _bespoke_ binary
 //! protocol, and each message can contain 1 of 2 possible data types (at least as per Kafka 3):
@@ -58,7 +70,7 @@
 //! carrying a `message_version` code: this will be amongst the fields of both structs.
 //!
 //!
-//! ## [`OffsetCommit`] a.k.a. "where is the consumer at?"
+//! ### [`OffsetCommit`] a.k.a. "where is the consumer at?"
 //!
 //! Kafka uses code generation to materialise [`OffsetCommit`] into Java code,
 //! and this is composed of 2 json definitions, that at compile time get turned into Java Classes:
@@ -74,7 +86,7 @@
 //! The information stored in [`OffsetCommit`] can be used to track
 //! _who has consumed what until now_. Refer to its own documentation for further details.
 //!
-//! ## [`GroupMetadata`] a.k.a. "what are the members of this group?"
+//! ### [`GroupMetadata`] a.k.a. "what are the members of this group?"
 //!
 //! Similarly to [`OffsetCommit`], Kafka uses code generation to materialise [`GroupMetadata`]
 //! into Java code, and this is composed of 2 json definitions, that at compile time
@@ -88,7 +100,7 @@
 //! [`__consumer_offsets`]: this is because it's usually produced when consumers join or leave
 //! groups.
 //!
-//! ## [`KonsumerOffsetsData`] i.e. "making it rusty"
+//! ### [`KonsumerOffsetsData`] i.e. "making it rusty"
 //!
 //! The entry point to this crate is [`KonsumerOffsetsData`]: this is an enum where each variant
 //! wraps one of the 2 possible data types seen above, as they are parsed from bytes coming
@@ -102,7 +114,7 @@
 //! This is because some Kafka clients might return the `(key,payload)` _tuple_ as `[u8]`,
 //! others as `Vec<u8>`.
 //!
-//! # A few words about parsing Kafka _entrails_
+//! ## A few words about parsing Kafka _entrails_
 //!
 //! Kafka runs on the JVM, so it's limited to what the JVM supports.
 //!
@@ -111,7 +123,7 @@
 //! an unsigned integer, like a string length or an ever increasing identifier, we use
 //! the signed integers that Java supports.
 //!
-//! ## Java Primitive types in Rust
+//! ### Java Primitive types in Rust
 //!
 //! Java uses a more limited set of [Primitive Types] for scalar values, compared to Rust.
 //! Fortunately, Rust offering is large enough that is possible to map all Java types
@@ -129,13 +141,13 @@
 //!
 //! And, additional limitation, Java only supported Big Endian encoding.
 //!
-//! ## Bespoke formats used by `__consumer_offsets`
+//! ### Bespoke formats used by `__consumer_offsets`
 //!
 //! In addition to fields of one of the primitive types above,
 //! messages of this internal topic also contain a few more structured types:
 //! _string_ and _vector of bytes_.
 //!
-//! ### Type: _string_
+//! #### Type: _string_
 //!
 //! 2 bytes are used to store the string length as Java `short`,
 //! followed by a UTF-8 encoded string of that length:
@@ -149,7 +161,7 @@
 //! +-----------------------------------------+
 //! ```
 //!
-//! ### Type: _vector of bytes_
+//! #### Type: _vector of bytes_
 //!
 //! 4 bytes are used to store the vector length as Java `int`,
 //! followed by a sequence of bytes of that length:
@@ -163,7 +175,7 @@
 //! +-----------------------------------------------------------+
 //! ```
 //!
-//! # Disclaimer
+//! ## Disclaimer
 //!
 //! [Confluent] is a great place to start if you are looking for a commercial Kafka solution,
 //! including PaaS, SaaS, training and more. **BUT** it is completely unrelated from this
@@ -182,6 +194,8 @@
 //! [Log Compaction]: https://kafka.apache.org/documentation/#compaction
 //! [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 //! [Consumer Client]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
+//! [`chrono::DateTime<Utc>`]: https://docs.rs/chrono/latest/chrono/struct.DateTime.html#method.from_utc
+//! [`time::OffsetDateTime`]: https://time-rs.github.io/api/time/struct.OffsetDateTime.html#method.from_unix_timestamp_nanos
 //!
 
 mod errors;
