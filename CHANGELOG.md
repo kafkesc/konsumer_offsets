@@ -1,6 +1,4 @@
-# v0.2.0 (20??-??-??)
-
-## Breaking Changes
+# v0.2.0 (2023-03-28)
 
 ## Features
 
@@ -22,8 +20,6 @@
 * Enabled use of the 
   ["sparse"](https://blog.rust-lang.org/inside-rust/2023/01/30/cargo-sparse-protocol.html)
   protocol when interacting with the https://crates.io registry
-
-## Bug Fixes
 
 ## Notes
 
