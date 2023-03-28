@@ -26,7 +26,9 @@
 * Parsing is based on [bytes_parser] and errors on [thiserror], so it's easy to read
   and handles result errors idiomatically
 * All types exported by this crate are "Thread Safe" and "Async/Await Safe":
-  we enforce the implementation of `Sized + Send + Sync + Unpin`  
+  we enforce the implementation of `Sized + Send + Sync + Unpin`
+* Support (via feature flags) to parse Unix timestamps via the [chrono] or [time] crates
+* Support (via feature flags) for serialization/deserialization via the [serde] crate
 
 ## License
 
@@ -49,3 +51,6 @@ dual licensed as above, without any additional terms or conditions.
 [`__consumer_offsets`]: https://kafka.apache.org/documentation/#impl_offsettracking
 [bytes_parser]: https://crates.io/crates/bytes_parser
 [thiserror]: https://crates.io/crates/thiserror
+[chrono]: https://crates.io/crates/chrono
+[time]: https://crates.io/crates/time
+[serde]: https://crates.io/crates/serde

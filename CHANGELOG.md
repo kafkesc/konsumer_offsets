@@ -11,6 +11,9 @@
 * `ts_time`: Optional feature flag to represent timestamps using
   [`time::OffsetDateTime`](https://time-rs.github.io/api/time/struct.OffsetDateTime.html#method.from_unix_timestamp_nanos)
   ([I#2](https://github.com/kafkesc/konsumer_offsets/issues/2))
+* `serde`: Optional feature flag to enable [serde](https://crates.io/crates/serde)-based
+  serialization/deserialization, for all the types exported by the crate
+  ([I#3](https://github.com/kafkesc/konsumer_offsets/issues/3))
 
 ## Enhancements
 
