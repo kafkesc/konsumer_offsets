@@ -27,6 +27,7 @@ use crate::utils::{parse_i16, parse_i32, parse_i64, parse_str};
 ///
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(any(feature = "ts_int", feature = "ts_chrono"), derive(Default))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OffsetCommit {
     /// **`(KEY)`** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
     ///

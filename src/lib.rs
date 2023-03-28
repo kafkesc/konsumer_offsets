@@ -16,6 +16,7 @@
 //! * `ts_int`: use `i64` to represent Unix Timestamps (conflicts with `ts_chrono` and `ts_time`)
 //! * `ts_chrono`: use [`chrono::DateTime<Utc>`] to represent Unix Timestamps (conflicts with `ts_int` and `ts_time`)
 //! * `ts_time`: use [`time::OffsetDateTime`] to represent Unix Timestamps (conflicts with `ts_chrono` and `ts_int`)
+//! * `serde`: support serialization/deserialization for all types exposed by this crate via the [serde] crate
 //!
 //! Default features: `ts_int`.
 //!
@@ -196,6 +197,7 @@
 //! [Consumer Client]: https://github.com/apache/kafka/tree/trunk/clients/src/main/java/org/apache/kafka/clients/consumer
 //! [`chrono::DateTime<Utc>`]: https://docs.rs/chrono/latest/chrono/struct.DateTime.html#method.from_utc
 //! [`time::OffsetDateTime`]: https://time-rs.github.io/api/time/struct.OffsetDateTime.html#method.from_unix_timestamp_nanos
+//! [serde]: https://crates.io/crates/serde
 //!
 
 mod errors;

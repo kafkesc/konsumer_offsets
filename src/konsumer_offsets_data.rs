@@ -14,6 +14,7 @@ const MSG_V2_GROUP_METADATA: i16 = 2;
 /// `__consumer_offsets` can be of different type. Ideally Kafka could have used 2 different
 /// topics, but it doesn't so... here we are.
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum KonsumerOffsetsData {
     /// Variant that wraps an [`OffsetCommit`] struct instance.
     OffsetCommit(OffsetCommit),
