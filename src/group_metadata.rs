@@ -48,6 +48,7 @@ use crate::utils::{parse_i16, parse_i32, parse_str, parse_vec_bytes};
 ///
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(any(feature = "ts_int", feature = "ts_chrono"), derive(Default))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GroupMetadata {
     /// **(KEY)** First 2-bytes integers in the original `__consumer_offsets`, identifying this data type.
     ///
@@ -234,6 +235,7 @@ impl GroupMetadata {
 ///
 /// Note that the words "Member" and "Consumer" can be used interchangeably in this context.
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MemberMetadata {
     /// Consumer Group Member identifier.
     pub id: String,
@@ -311,6 +313,7 @@ impl MemberMetadata {
 ///
 /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConsumerProtocolSubscription {
     /// Subscription (schema) version.
     ///
@@ -409,6 +412,7 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
 
 /// Represents a collection of partitions belonging to a specific topic.
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TopicPartitions {
     /// Topic name.
     topic: String,
@@ -460,6 +464,7 @@ impl TopicPartitions {
 ///
 /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConsumerProtocolAssignment {
     /// Assignment (schema) version.
     ///
