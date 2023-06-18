@@ -1,6 +1,6 @@
 [package]
 name = "konsumer_offsets"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Ivan De Marino <detronizator@gmail.com>"]
 repository = "https://github.com/kafkesc/konsumer_offsets"
@@ -18,9 +18,9 @@ exclude = [
 [dependencies]
 bytes_parser = "0.1.4"
 thiserror = "1.0.40"
-chrono = { version = "0.4.24", optional = true, default-features = false, features = ["clock", "std"] }
-time = { version = "0.3.20", optional = true, default-features = false, features = ["std"] }
-serde = { version = "1.0.160", optional = true, default-features = false, features = ["derive", "std"] }
+chrono = { version = "0.4.26", optional = true, default-features = false, features = ["clock", "std"] }
+time = { version = "0.3.22", optional = true, default-features = false, features = ["std"] }
+serde = { version = "1.0.164", optional = true, default-features = false, features = ["derive", "std"] }
 
 [dev-dependencies]
 rstest = "0.17.0"
