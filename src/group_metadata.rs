@@ -261,7 +261,16 @@ pub struct MemberMetadata {
     /// the Group Coordinator in place of [`Self::rebalance_timeout`].
     pub session_timeout: i32,
 
+    /// Consumer topic and partition subscriptions.
+    ///
+    /// This is what the consumer explicitly subscribes to:
+    /// either this or `assignment` is populated, but usually not both.
     pub subscription: ConsumerProtocolSubscription,
+
+    /// Consumer partition assignment by the [Group Coordinator].
+    ///
+    /// This is what the consumer is assigned by the [Group Coordinator]:
+    /// either this or `subscription` is populated, but usually not both.
     pub assignment: ConsumerProtocolAssignment,
 }
 
@@ -318,24 +327,24 @@ pub struct ConsumerProtocolSubscription {
     /// Subscription (schema) version.
     ///
     /// This controls the bespoke binary parser behaviour.
-    schema_version: i16,
+    pub schema_version: i16,
 
     /// Topic that [`Self`] is subscribed to.
     ///
     /// This reflects the Consumer own subscription configuration.
-    subscribed_topics: Vec<String>,
+    pub subscribed_topics: Vec<String>,
 
     /// Optional data provided by a Consumer.
     ///
     /// The Consumer sends this to the Group Coordinator, and this can then be used by
     /// a bespoke Assignor to implement tailor-made logic.
-    user_data: Vec<u8>,
+    pub user_data: Vec<u8>,
 
     /// Collection of [`TopicPartitions`] that this Consumer has manually assigned to itself.
     ///
     /// Note that when a Consumer uses manual partition assignment, it is then excluded
     /// form automated partition assignment or rebalance operation.
-    owned_topic_partitions: Vec<TopicPartitions>,
+    pub owned_topic_partitions: Vec<TopicPartitions>,
 
     /// Generation identifier of the Consumer.
     ///
@@ -343,7 +352,7 @@ pub struct ConsumerProtocolSubscription {
     ///
     /// This is useful when concurrent operations get out of order,
     /// and original order has to be determined.
-    generation_id: i32,
+    pub generation_id: i32,
 
     /// Rack identifier of the Consumer.
     ///
@@ -355,7 +364,7 @@ pub struct ConsumerProtocolSubscription {
     ///
     /// [RackAwareReplicaSelector]: https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/replica/RackAwareReplicaSelector.java
     /// [Broker Rack Awareness]: https://kafka.apache.org/documentation/#basic_ops_racks
-    rack_id: String,
+    pub rack_id: String,
 }
 
 impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
@@ -415,14 +424,14 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TopicPartitions {
     /// Topic name.
-    topic: String,
+    pub topic: String,
 
     /// Partitions that belong to the topic.
     ///
     /// Depending on the context this struct is used, this could be the entire set
     /// of partitions a [`TopicPartitions::topic`] is made of, or a sub-set
     /// (ex. partition assignment).
-    partitions: Vec<i32>,
+    pub partitions: Vec<i32>,
 }
 
 impl TopicPartitions {
@@ -469,18 +478,18 @@ pub struct ConsumerProtocolAssignment {
     /// Assignment (schema) version.
     ///
     /// This controls the bespoke binary parser behaviour.
-    schema_version: i16,
+    pub schema_version: i16,
 
     /// Collection of [`TopicPartitions`] that this Consumer has been assigned by the [Group Coordinator].
     ///
     /// [Group Coordinator]: https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/coordinator/group/GroupCoordinator.scala
-    assigned_topic_partitions: Vec<TopicPartitions>,
+    pub assigned_topic_partitions: Vec<TopicPartitions>,
 
     /// Optional data provided by a Consumer.
     ///
     /// The Consumer sends this to the Group Coordinator, and this can then be used by
     /// a bespoke Assignor to implement tailor-made logic.
-    user_data: Vec<u8>,
+    pub user_data: Vec<u8>,
 }
 
 impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
