@@ -1,3 +1,17 @@
+# v0.2.2 (2023-06-23)
+
+## Bug Fixes
+
+* Fixed visibility of fields for `subscription: ConsumerProtocolSubscription` and
+  `assignment: ConsumerProtocolAssignment`, used by the `MemberMetadata` type.
+  Their fields are now `pub`lic.
+
+# v0.2.1 (2023-06-18)
+
+## Notes
+
+* Dependencies updates
+
 # v0.2.0 (2023-03-28)
 
 ## Features
