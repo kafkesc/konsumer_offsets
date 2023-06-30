@@ -1,3 +1,14 @@
+# v0.3.0 (2023-06-30)
+
+## Features
+
+* Adding `try_from` implementations for `&[u8]` and `Vec<u8>` input for
+  `ConsumerProtocolAssignment` and `ConsumerProtocolSubscription` types.
+
+## Bug Fixes
+
+* Added missing documentation for `MemberMetadata.group_instance_id` field.
+
 # v0.2.2 (2023-06-23)
 
 ## Bug Fixes
@@ -10,7 +21,7 @@
 
 ## Notes
 
-* Dependencies updates
+* Dependencies updates.
 
 # v0.2.0 (2023-03-28)
 
@@ -37,13 +48,13 @@
 
 ## Notes
 
-* Dependencies updates
+* Dependencies updates.
 
 # v0.1.1 (2023-03-13)
 
 ## Notes
 
-* Dependencies updates
+* Dependencies updates.
 
 
 # v0.1.0 (2023-01-18)
@@ -51,5 +62,5 @@
 ## Features
 
 * First release
-* Complete parser for the content of the Kafka `__consumer_offsets` Topic
+* Complete parser for the content of the Kafka `__consumer_offsets` Topic.
 
