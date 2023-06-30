@@ -1,4 +1,5 @@
 use std::any::type_name;
+use std::ops::Deref;
 
 use bytes_parser::BytesParser;
 
@@ -371,7 +372,8 @@ pub struct ConsumerProtocolSubscription {
 impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
     type Error = KonsumerOffsetsError;
 
-    /// Create [`Self`] from data in the payload part of the message.
+    /// Create [`Self`] from bytes read from a [`BytesParser`] instance.
+    /// Data is usually ready from the payload part of the message.
     ///
     /// This is based on the generated `org.apache.kafka.common.message.ConsumerProtocolSubscription#read` method.
     fn try_from(parser: &mut BytesParser) -> Result<Self, Self::Error> {
@@ -417,6 +419,24 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolSubscription {
         }
 
         Ok(subscription)
+    }
+}
+
+impl TryFrom<&[u8]> for ConsumerProtocolSubscription {
+    type Error = KonsumerOffsetsError;
+
+    /// Create [`Self`] from bytes read from a `&[u8]` (slice of bytes).
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        Self::try_from(&mut BytesParser::from(bytes))
+    }
+}
+
+impl TryFrom<Vec<u8>> for ConsumerProtocolSubscription {
+    type Error = KonsumerOffsetsError;
+
+    /// Create [`Self`] from bytes read from a `Vec<u8>` (vector of bytes).
+    fn try_from(bytes_vec: Vec<u8>) -> Result<Self, Self::Error> {
+        Self::try_from(bytes_vec.deref())
     }
 }
 
@@ -496,7 +516,8 @@ pub struct ConsumerProtocolAssignment {
 impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
     type Error = KonsumerOffsetsError;
 
-    /// Create [`Self`] from data in the payload part of the message.
+    /// Create [`Self`] from bytes read from a [`BytesParser`] instance.
+    /// Data is usually ready from the payload part of the message.
     ///
     /// This is based on the generated `org.apache.kafka.common.message.ConsumerProtocolAssignment#read` method.
     fn try_from(parser: &mut BytesParser) -> Result<Self, Self::Error> {
@@ -522,6 +543,24 @@ impl<'a> TryFrom<&mut BytesParser<'a>> for ConsumerProtocolAssignment {
         assignment.user_data = parse_vec_bytes(parser)?;
 
         Ok(assignment)
+    }
+}
+
+impl TryFrom<&[u8]> for ConsumerProtocolAssignment {
+    type Error = KonsumerOffsetsError;
+
+    /// Create [`Self`] from bytes read from a `&[u8]` (slice of bytes).
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        Self::try_from(&mut BytesParser::from(bytes))
+    }
+}
+
+impl TryFrom<Vec<u8>> for ConsumerProtocolAssignment {
+    type Error = KonsumerOffsetsError;
+
+    /// Create [`Self`] from bytes read from a `Vec<u8>` (vector of bytes).
+    fn try_from(bytes_vec: Vec<u8>) -> Result<Self, Self::Error> {
+        Self::try_from(bytes_vec.deref())
     }
 }
 
