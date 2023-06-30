@@ -240,6 +240,7 @@ pub struct MemberMetadata {
     /// Consumer Group Member identifier.
     pub id: String,
 
+    /// Member Group Instance identifier.
     pub group_instance_id: String,
 
     /// Consumer Client identifier.
