@@ -17,10 +17,10 @@ exclude = [
 
 [dependencies]
 bytes_parser = "0.1.4"
-thiserror = "1.0.40"
+thiserror = "1.0.43"
 chrono = { version = "0.4.26", optional = true, default-features = false, features = ["clock", "std"] }
-time = { version = "0.3.22", optional = true, default-features = false, features = ["std"] }
-serde = { version = "1.0.164", optional = true, default-features = false, features = ["derive", "std"] }
+time = { version = "0.3.23", optional = true, default-features = false, features = ["std"] }
+serde = { version = "1.0.173", optional = true, default-features = false, features = ["derive", "std"] }
 
 [dev-dependencies]
 rstest = "0.17.0"
