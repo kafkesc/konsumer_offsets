@@ -79,11 +79,8 @@ pub(crate) fn parse_chrono_datetime_utc(
 ) -> Result<chrono::DateTime<chrono::Utc>, KonsumerOffsetsError> {
     let millis = parse_i64(parser)?;
 
-    Ok(chrono::DateTime::<chrono::Utc>::from_utc(
-        chrono::NaiveDateTime::from_timestamp_millis(millis)
-            .ok_or(KonsumerOffsetsError::ChronoDateTimeUtcParsingError(millis))?,
-        chrono::Utc,
-    ))
+    chrono::DateTime::<chrono::Utc>::from_timestamp_millis(millis)
+        .ok_or(KonsumerOffsetsError::ChronoDateTimeUtcParsingError(millis))
 }
 
 /// Wraps the result of [`parse_i64`] into a [`time::OffsetDateTime`].

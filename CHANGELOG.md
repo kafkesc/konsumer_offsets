@@ -3,6 +3,8 @@
 ## Notes
 
 * Deps upgrade
+* Removing unnecessary `[registries.crates-io] protocol = sparse` Cargo config
+* Tweaking use of `chrono` to remove use of deprecated methods
 
 # v0.3.0 (2023-06-30)
 
