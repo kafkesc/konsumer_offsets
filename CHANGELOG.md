@@ -1,3 +1,9 @@
+# v0.3.1 (2024-05-20)
+
+## Notes
+
+* Deps upgrade
+
 # v0.3.0 (2023-06-30)
 
 ## Features
